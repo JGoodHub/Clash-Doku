@@ -10,6 +10,7 @@
 /[Ll]ogs/
 /[Mm]emoryCaptures/
 
+
 # Asset meta data should only be ignored when the corresponding asset is also ignored
 !/[Aa]ssets/**/*.meta
 
@@ -21,6 +22,7 @@
 
 # Visual Studio cache directory
 .vs/
+.idea/
 
 # Gradle cache directory
 .gradle/
@@ -57,4 +59,8 @@ sysinfo.txt
 
 # Crashlytics generated file
 crashlytics-build.properties
+
+# Personal packages
+Packages/Async-Connector/
+Packages/GoodHub-Core/
 
