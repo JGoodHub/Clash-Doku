@@ -10,22 +10,27 @@ public class CellTile : MonoBehaviour
     {
 
         INITIAL_STATE,
-        PROPOSED_CHANGE,
-        CORRECT,
-        WRONG
+        PROPOSED_PLACEMENT,
+        PLAYER_BLUE,
+        PLAYER_RED,
+        INCORRECT
 
     }
 
     [SerializeField] private TextMeshProUGUI _valueText;
     [SerializeField] private Image _background;
+    [Space]
     [SerializeField] private Color _defaultColor;
     [SerializeField] private Color _pendingColor;
-    [SerializeField] private Color _playerPlacedGreenColor;
-    [SerializeField] private Color _playerPlacedRedColor;
+    [SerializeField] private Color _playerOneColor;
+    [SerializeField] private Color _playerTwoColor;
+    [SerializeField] private Color _incorrectColour;
 
     public int X { get; private set; }
     public int Y { get; private set; }
     public int Value { get; private set; }
+
+    public Vector2Int Position => new Vector2Int(X, Y);
 
     public void Initialise(int x, int y)
     {
@@ -49,14 +54,17 @@ public class CellTile : MonoBehaviour
             case ColourState.INITIAL_STATE:
                 _background.color = _defaultColor;
                 break;
-            case ColourState.PROPOSED_CHANGE:
+            case ColourState.PROPOSED_PLACEMENT:
                 _background.color = _pendingColor;
                 break;
-            case ColourState.CORRECT:
-                _background.color = _playerPlacedGreenColor;
+            case ColourState.PLAYER_BLUE:
+                _background.color = _playerOneColor;
                 break;
-            case ColourState.WRONG:
-                _background.color = _playerPlacedRedColor;
+            case ColourState.PLAYER_RED:
+                _background.color = _playerTwoColor;
+                break;
+            case ColourState.INCORRECT:
+                _background.color = _incorrectColour;
                 break;
         }
     }

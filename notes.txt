@@ -1,0 +1,71 @@
+Match report data
+- Current round number
+	- This starts at 1 and is only incremented once both players have made their move
+- Player ones proposed changes per round
+- Player twos proposed changes per round
+
+First draft scoring mechanic/rules
+- Single tile placement
+	- Right number scores 1 point
+	- Wrong number scores no points
+- Double tile placement
+	- If both numbers are the same, both sides score 1
+	- If both sides are wrong neither side scores
+	- If side A is right and side B is wrong, side A scores 2
+		- Vice verse
+
+Both players start a new game and join the same room
+Both players are presented with the same board layout and number set
+
+Player one moves first
+- Player one places all their numbers and presses end turn
+- Player ones changes are held in the waiting colour state
+- Player ones proposed changes are stashed in the match report and sent to the server
+- Player ones game checks for any moves from the other player for that round on the server
+- As their are non the screen for player one shows player two thinking
+	- Player ones game will continue to pole the server for the other players move every 10 seconds
+
+Player two makes their moves second
+- Player two places all their numbers and presses end turn
+- Player twos changes are held in the waiting colour state
+- Player twos proposed changes are stashed in the match report and sent to the server
+- Player twos game also checks for any moves from the other player for that round
+- Player twos game finds the moves player one made for the current round
+
+Once a players game sees the opponents moves for that round the process is the same on both devices, just inverted
+
+In the case of player two above
+- Player twos tile placements are visible as orange tiles on the board
+- Player ones tile places fly down one by one from their player card
+	- Once over top the space the scoring mechanics are resolved for that square
+	- If one or both players scored on that space
+		- The score number appears overtop the space in white
+		- The number(s) fly to the players totals, changing colour to match that player as it flies
+- Once all the tiles have been compared and scores given
+	- Correct tiles are locked into the default colour
+	- A round banner appears
+	- New tiles are dealt to both players
+	new round starts
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	

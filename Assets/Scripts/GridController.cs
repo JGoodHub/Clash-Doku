@@ -36,26 +36,31 @@ public class GridController : SceneSingleton<GridController>
         }
     }
 
-    public void MirrorBoardData(SudokuBoard board)
+    public void SetMirrorBoard(SudokuBoard board)
     {
         _mirrorBoard = board;
 
-        CopyBoardData(_mirrorBoard);
+        CopyBoardPreviewState(_mirrorBoard);
 
         _mirrorBoard.OnProposedChangeAdded += ProposedChangeAdded;
-        _mirrorBoard.OnProposedChangesReset += CopyBoardData;
+        _mirrorBoard.OnProposedChangesReset += ProposedChangesReset;
 
         _mirrorBoard.OnProposedChangesCommitted += ProposedChangesCommitted;
     }
 
-    private void ProposedChangeAdded(SudokuBoard board, SudokuBoard.ProposedChange change)
+    private void ProposedChangeAdded(SudokuBoard board, SudokuBoard.ProposedPlacements placements)
     {
-        CellTile cellTile = GetCell(change.Position);
-        cellTile.SetValue(change.Value);
-        cellTile.SetColourState(CellTile.ColourState.PROPOSED_CHANGE);
+        CellTile cellTile = GetCell(placements.Position);
+        cellTile.SetValue(placements.Value);
+        cellTile.SetColourState(CellTile.ColourState.PROPOSED_PLACEMENT);
     }
 
-    public void CopyBoardData(SudokuBoard board)
+    private void ProposedChangesReset(SudokuBoard board)
+    {
+        CopyBoardPreviewState(_mirrorBoard);
+    }
+
+    public void CopyBoardPreviewState(SudokuBoard board)
     {
         for (int y = 0; y < 9; y++)
         {
@@ -67,19 +72,19 @@ public class GridController : SceneSingleton<GridController>
         }
     }
 
-    private void ProposedChangesCommitted(SudokuBoard board, List<SudokuBoard.ChangeResult> changeResults)
+    private void ProposedChangesCommitted(SudokuBoard board, List<SudokuBoard.PlacementResult> changeResults)
     {
-        foreach (SudokuBoard.ChangeResult changeResult in changeResults)
+        foreach (SudokuBoard.PlacementResult changeResult in changeResults)
         {
             CellTile cellTile = GetCell(changeResult.Position);
 
             switch (changeResult.ResultCode)
             {
-                case SudokuBoard.ChangeResult.ChangeResultCode.SUCCESS:
-                    cellTile.SetColourState(CellTile.ColourState.CORRECT);
+                case SudokuBoard.PlacementResult.PlacementResultCode.SUCCESS:
+                    cellTile.SetColourState(CellTile.ColourState.PLAYER_BLUE);
                     break;
-                case SudokuBoard.ChangeResult.ChangeResultCode.WRONG:
-                    cellTile.SetColourState(CellTile.ColourState.WRONG);
+                case SudokuBoard.PlacementResult.PlacementResultCode.WRONG:
+                    cellTile.SetColourState(CellTile.ColourState.INCORRECT);
                     break;
             }
         }

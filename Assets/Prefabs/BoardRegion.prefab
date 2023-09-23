@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 7324826342389098787}
   - component: {fileID: 6693101754557389131}
   m_Layer: 5
-  m_Name: RegionPrefab
+  m_Name: BoardRegion
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

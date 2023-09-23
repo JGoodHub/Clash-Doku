@@ -15,6 +15,7 @@ public class RackController : SceneSingleton<RackController>
     [Space]
     [SerializeField] private int _tilesCount = 7;
     [Space]
+    [SerializeField] private Button _homeBtn;
     [SerializeField] private Button _resetTilesButton;
     [SerializeField] private Button _endTurnButton;
 
@@ -34,17 +35,52 @@ public class RackController : SceneSingleton<RackController>
         _freeTile.SetState(0, false);
         _freeTile.gameObject.SetActive(false);
 
-        _endTurnButton.onClick.AddListener(() => GameController.Instance.EndTurn());
+        _homeBtn.onClick.AddListener(GoToHomeScene);
+        _endTurnButton.onClick.AddListener(() => MatchController.Instance.EndTurn());
         _resetTilesButton.onClick.AddListener(ResetPlacedTiles);
+
+        MatchController.Instance.Board.OnProposedChangesCommitted += ProposedChangesCommitted;
+    }
+
+    private void ProposedChangesCommitted(SudokuBoard arg1, List<SudokuBoard.PlacementResult> arg2)
+    {
+        for (int i = _rackTiles.Count - 1; i >= 0; i--)
+        {
+            if (_rackTiles[i].gameObject.activeSelf == false)
+            {
+                Destroy(_rackTiles[i]);
+                _rackTiles.RemoveAt(i);
+            }
+        }
+
+        PopulateRack();
     }
 
     private void PopulateRack()
     {
-        for (int i = _rackTiles.Count; i < _tilesCount; i++)
+        Dictionary<int, int> missingNumberCounts = MatchController.Instance.Board.GetMissingNumberCounts();
+        List<int> numberBag = new List<int>();
+
+        foreach (int key in missingNumberCounts.Keys)
+            for (int i = 0; i < missingNumberCounts[key]; i++)
+                numberBag.Add(key);
+
+        Random.InitState(MatchController.Instance.RoundSeed);
+        for (int i = 0; i < numberBag.Count * 10; i++)
+        {
+            int indexA = Random.Range(0, numberBag.Count);
+            int indexB = Random.Range(0, numberBag.Count);
+
+            int temp = numberBag[indexA];
+            numberBag[indexA] = numberBag[indexB];
+            numberBag[indexB] = temp;
+        }
+
+        for (int i = _rackTiles.Count, j = 0; i < _tilesCount && j < numberBag.Count; i++, j++)
         {
             RackTile rackTile = Instantiate(_rackTilePrefab, _fixedContainer).GetComponent<RackTile>();
 
-            rackTile.SetState(Random.Range(1, 10), true, false);
+            rackTile.SetState(numberBag[j], true, false);
 
             _rackTiles.Add(rackTile);
         }
@@ -59,7 +95,7 @@ public class RackController : SceneSingleton<RackController>
             rackTile.gameObject.SetActive(true);
         }
 
-        GameController.Instance.Board.ResetAllProposedValueChanges();
+        MatchController.Instance.Board.ResetAllProposedValueChanges();
     }
 
     public RackTile GetNearestRackTile(Vector2 position, out float distance)
@@ -96,14 +132,16 @@ public class RackController : SceneSingleton<RackController>
 
         CellTile nearestCellTile = GridController.Instance.GetNearestCellTile(_freeTile.transform.position, out float cellTileDistance);
 
-        SudokuBoard board = GameController.Instance.Board;
+        SudokuBoard board = MatchController.Instance.Board;
 
         if (cellTileDistance < 0.25f)
         {
-            if (board.BaseState.Values[nearestCellTile.X, nearestCellTile.Y] == -1)
+            board.BaseState.GetValueAndColour(nearestCellTile.Position, out int value, out CellTile.ColourState state);
+
+            if (value == -1 || state == CellTile.ColourState.INCORRECT)
             {
-                SudokuBoard.ProposedChange proposedChange = new SudokuBoard.ProposedChange(new Vector2Int(nearestCellTile.X, nearestCellTile.Y), tile.Value);
-                board.AddProposedValueChange(proposedChange);
+                SudokuBoard.ProposedPlacements proposedPlacements = new SudokuBoard.ProposedPlacements(new Vector2Int(nearestCellTile.X, nearestCellTile.Y), tile.Value);
+                board.AddProposedValueChange(proposedPlacements);
 
                 tile.gameObject.SetActive(false);
                 return;
@@ -111,6 +149,11 @@ public class RackController : SceneSingleton<RackController>
         }
 
         tile.gameObject.SetActive(true);
+    }
+
+    private void GoToHomeScene()
+    {
+        GameController.Instance.LoadHomeScene();
     }
 
 }
