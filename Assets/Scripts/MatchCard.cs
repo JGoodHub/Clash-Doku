@@ -1,5 +1,6 @@
 ﻿using System;
 using Async.Connector;
+using Async.Connector.Models;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;

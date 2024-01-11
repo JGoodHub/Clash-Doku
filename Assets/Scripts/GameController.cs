@@ -16,7 +16,7 @@ public class GameController : GlobalSingleton<GameController>
     protected override void Awake()
     {
         base.Awake();
-        AsyncConnector.InitialiseAndLogin();
+        AsyncConnector.InitialiseAndLogin(true);
     }
 
     private IEnumerator Start()
@@ -51,10 +51,18 @@ public class MatchReport
 
     public int RoomID;
 
+    public OpponentType OpponentType;
+    
     public int MyScore;
     public int OpponentScore;
     public int RoundNumber;
 
     public SudokuBoard.BoardState BoardState;
+    
+}
 
+public enum OpponentType
+{
+    Bot,
+    Human
 }

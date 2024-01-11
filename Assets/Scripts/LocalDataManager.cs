@@ -7,7 +7,7 @@ using UnityEngine;
 public class LocalDataManager : GlobalSingleton<LocalDataManager>
 {
 
-    public const string PREFS_KEY = "local_data_stroe";
+    public const string PrefsKey = "local_data_stroe";
 
     private LocalData _data;
 
@@ -23,12 +23,12 @@ public class LocalDataManager : GlobalSingleton<LocalDataManager>
     public static void Save()
     {
         string serialisedData = JsonConvert.SerializeObject(Data, Formatting.Indented);
-        PlayerPrefs.SetString(PREFS_KEY, serialisedData);
+        PlayerPrefs.SetString(PrefsKey, serialisedData);
     }
 
     private void LoadFromPrefs()
     {
-        string serialisedData = PlayerPrefs.HasKey(PREFS_KEY) ? PlayerPrefs.GetString(PREFS_KEY) : string.Empty;
+        string serialisedData = PlayerPrefs.HasKey(PrefsKey) ? PlayerPrefs.GetString(PrefsKey) : string.Empty;
         _data = new LocalData();
 
         if (string.IsNullOrWhiteSpace(serialisedData) == false)

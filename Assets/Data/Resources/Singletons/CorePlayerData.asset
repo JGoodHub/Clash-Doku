@@ -10,10 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8ff40f25fd4dc284aad295f65f21b5bf, type: 3}
-  m_Name: 
+  m_Name: CorePlayerData
   m_EditorClassIdentifier: 
   UserID: 16950
   UserName: Guest
   UserTag: 212
-  PrivateUserDataJson: 
-  PublicUserDataJson: 
+  PrivateUserDataJson: '{}'
+  PublicUserDataJson: '{}'

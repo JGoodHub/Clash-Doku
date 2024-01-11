@@ -3,42 +3,47 @@ using System.Collections;
 using System.Collections.Generic;
 using GoodHub.Core.Runtime;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 using Random = UnityEngine.Random;
 
 public class RackController : SceneSingleton<RackController>
 {
 
-    [SerializeField] private GameObject _rackTilePrefab;
-    [SerializeField] private RectTransform _fixedContainer;
-    [SerializeField] private RectTransform _freeContainer;
+    [FormerlySerializedAs("_rackTilePrefab")]
+    [SerializeField] private GameObject _numberTilePrefab;
+    [Space]
+    [SerializeField] private List<RectTransform> _rackSlotsOne = new List<RectTransform>();
+    [SerializeField] private List<RectTransform> _rackSlotsTwo = new List<RectTransform>();
+    [SerializeField] private List<RectTransform> _rackSlotsThree = new List<RectTransform>();
+    [SerializeField] private List<RectTransform> _rackSlotsFour = new List<RectTransform>();
+    [SerializeField] private List<RectTransform> _rackSlotsFive = new List<RectTransform>();
+    [SerializeField] private List<RectTransform> _rackSlotsSix = new List<RectTransform>();
+    [SerializeField] private List<RectTransform> _rackSlotsSeven = new List<RectTransform>();
+    [SerializeField] private List<RectTransform> _rackSlotsEight = new List<RectTransform>();
     [Space]
     [SerializeField] private int _tilesCount = 7;
-    [Space]
-    [SerializeField] private Button _homeBtn;
-    [SerializeField] private Button _resetTilesButton;
-    [SerializeField] private Button _endTurnButton;
 
-    private RackTile _freeTile;
-    private List<RackTile> _rackTiles = new List<RackTile>();
+    private Dictionary<int, List<RectTransform>> _rackSlotsByCount = new Dictionary<int, List<RectTransform>>();
 
-    public List<RackTile> RackTiles => _rackTiles;
+    private List<NumberTile> _rackTiles = new List<NumberTile>();
+
+    public List<NumberTile> RackTiles => _rackTiles;
+
+    private void Awake()
+    {
+        _rackSlotsByCount.Add(1, _rackSlotsOne);
+        _rackSlotsByCount.Add(2, _rackSlotsTwo);
+        _rackSlotsByCount.Add(3, _rackSlotsThree);
+        _rackSlotsByCount.Add(4, _rackSlotsFour);
+        _rackSlotsByCount.Add(5, _rackSlotsFive);
+        _rackSlotsByCount.Add(6, _rackSlotsSix);
+        _rackSlotsByCount.Add(7, _rackSlotsSeven);
+        _rackSlotsByCount.Add(8, _rackSlotsEight);
+    }
 
     private void Start()
     {
-        foreach (Transform child in _fixedContainer.transform)
-            Destroy(child.gameObject);
-
-        PopulateRack();
-
-        _freeTile = Instantiate(_rackTilePrefab, _freeContainer).GetComponent<RackTile>();
-        _freeTile.SetState(0, false);
-        _freeTile.gameObject.SetActive(false);
-
-        _homeBtn.onClick.AddListener(GoToHomeScene);
-        _endTurnButton.onClick.AddListener(() => MatchController.Instance.EndTurn());
-        _resetTilesButton.onClick.AddListener(ResetPlacedTiles);
-
         MatchController.Instance.Board.OnProposedChangesCommitted += ProposedChangesCommitted;
     }
 
@@ -56,104 +61,96 @@ public class RackController : SceneSingleton<RackController>
         PopulateRack();
     }
 
-    private void PopulateRack()
+    public void PopulateRack()
     {
-        Dictionary<int, int> missingNumberCounts = MatchController.Instance.Board.GetMissingNumberCounts();
-        List<int> numberBag = new List<int>();
+        NumberBag numberBag = MatchController.Instance.GetBoardNumberBag();
+        RectTransform rackSortingLayerRect = SortingLayerHandler.Instance.GetTransformForSortingLayer(SortingLayer.RACK);
 
-        foreach (int key in missingNumberCounts.Keys)
-            for (int i = 0; i < missingNumberCounts[key]; i++)
-                numberBag.Add(key);
+        List<int> nextNumbers = numberBag.PeekNextNumbers(_tilesCount);
 
-        Random.InitState(MatchController.Instance.RoundSeed);
-        for (int i = 0; i < numberBag.Count * 10; i++)
+        foreach (int number in nextNumbers)
         {
-            int indexA = Random.Range(0, numberBag.Count);
-            int indexB = Random.Range(0, numberBag.Count);
+            NumberTile numberTile = Instantiate(_numberTilePrefab, rackSortingLayerRect).GetComponent<NumberTile>();
+            numberTile.SetState(number, true, false);
 
-            int temp = numberBag[indexA];
-            numberBag[indexA] = numberBag[indexB];
-            numberBag[indexB] = temp;
+            _rackTiles.Add(numberTile);
         }
 
-        for (int i = _rackTiles.Count, j = 0; i < _tilesCount && j < numberBag.Count; i++, j++)
+        RefreshTilePositions();
+    }
+
+    private void RefreshTilePositions()
+    {
+        List<RectTransform> rackSlots = _rackSlotsByCount[_rackTiles.Count];
+
+        for (int i = 0; i < _rackTiles.Count; i++)
         {
-            RackTile rackTile = Instantiate(_rackTilePrefab, _fixedContainer).GetComponent<RackTile>();
-
-            rackTile.SetState(numberBag[j], true, false);
-
-            _rackTiles.Add(rackTile);
+            NumberTile rackTile = _rackTiles[i];
+            rackTile.transform.position = rackSlots[i].transform.position;
         }
     }
 
-    private void ResetPlacedTiles()
+    public void ResetPlacedTiles()
     {
-        _freeTile.gameObject.SetActive(false);
-
-        foreach (RackTile rackTile in _rackTiles)
-        {
-            rackTile.gameObject.SetActive(true);
-        }
+        RefreshTilePositions();
 
         MatchController.Instance.Board.ResetAllProposedValueChanges();
     }
 
-    public RackTile GetNearestRackTile(Vector2 position, out float distance)
+    public RectTransform GetNearestRackSlot(Vector3 position, out int slotIndex)
     {
-        RackTile nearestTile = null;
-        distance = float.MaxValue;
+        RectTransform nearestSlot = null;
+        float minDistance = float.MaxValue;
+        slotIndex = -1;
 
-        foreach (RackTile rackTile in _rackTiles)
+        for (int i = 0; i < _rackSlotsByCount[_rackTiles.Count + 1].Count; i++)
         {
-            float tileDistance = Vector2.Distance(position, rackTile.transform.position);
-            if (tileDistance < distance)
-            {
-                nearestTile = rackTile;
-                distance = tileDistance;
-            }
+            RectTransform slot = _rackSlotsByCount[_rackTiles.Count + 1][i];
+            float slotDistance = Vector2.Distance(position, slot.transform.position);
+
+            if (slotDistance > minDistance)
+                continue;
+
+            nearestSlot = slot;
+            minDistance = slotDistance;
+            slotIndex = i;
         }
 
-        return nearestTile;
+        return nearestSlot;
     }
 
-    public void StartedDraggingTile(RackTile tile)
+    public void StartDraggingTile(NumberTile tile)
     {
-        _freeTile.SetState(tile.Value);
+        _rackTiles.Remove(tile);
+
+        RefreshTilePositions();
     }
 
-    public void DraggingTile(RackTile tile, Vector2 position)
+    public void FinishedDraggingTile(NumberTile tile)
     {
-        _freeTile.transform.position = position;
-    }
-
-    public void FinishedDraggingTile(RackTile tile)
-    {
-        _freeTile.SetState(0, false);
-
-        CellTile nearestCellTile = GridController.Instance.GetNearestCellTile(_freeTile.transform.position, out float cellTileDistance);
-
         SudokuBoard board = MatchController.Instance.Board;
 
-        if (cellTileDistance < 0.25f)
+        CellTile nearestCell = GridController.Instance.GetNearestCellTile(tile.transform.position, out float cellTileDistance);
+        board.BaseState.GetValueAndColour(nearestCell.Position, out int value, out ColourState state);
+
+        // You can't override already correct slots
+        if (cellTileDistance > 0.25f ||
+            (value != -1 && state != ColourState.INCORRECT))
         {
-            board.BaseState.GetValueAndColour(nearestCellTile.Position, out int value, out CellTile.ColourState state);
+            GetNearestRackSlot(tile.transform.position, out int slotIndex);
+            _rackTiles.Insert(slotIndex, tile);
 
-            if (value == -1 || state == CellTile.ColourState.INCORRECT)
-            {
-                SudokuBoard.ProposedPlacements proposedPlacements = new SudokuBoard.ProposedPlacements(new Vector2Int(nearestCellTile.X, nearestCellTile.Y), tile.Value);
-                board.AddProposedValueChange(proposedPlacements);
+            tile.SetScaleFactor(SortingLayer.RACK);
 
-                tile.gameObject.SetActive(false);
-                return;
-            }
+            RefreshTilePositions();
+
+            return;
         }
 
-        tile.gameObject.SetActive(true);
-    }
+        SudokuBoard.ProposedPlacements proposedPlacements = new SudokuBoard.ProposedPlacements(new Vector2Int(nearestCell.X, nearestCell.Y), tile.Value);
+        board.AddProposedValueChange(proposedPlacements);
 
-    private void GoToHomeScene()
-    {
-        GameController.Instance.LoadHomeScene();
+        tile.transform.position = (Vector2)nearestCell.transform.position;
+        tile.SetScaleFactor(SortingLayer.BOARD);
     }
-
 }

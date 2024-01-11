@@ -36,7 +36,7 @@ public class GridController : SceneSingleton<GridController>
         }
     }
 
-    public void SetMirrorBoard(SudokuBoard board)
+    public void SetBoardData(SudokuBoard board)
     {
         _mirrorBoard = board;
 
@@ -52,7 +52,7 @@ public class GridController : SceneSingleton<GridController>
     {
         CellTile cellTile = GetCell(placements.Position);
         cellTile.SetValue(placements.Value);
-        cellTile.SetColourState(CellTile.ColourState.PROPOSED_PLACEMENT);
+        cellTile.SetColourState(ColourState.PROPOSED_PLACEMENT);
     }
 
     private void ProposedChangesReset(SudokuBoard board)
@@ -81,31 +81,32 @@ public class GridController : SceneSingleton<GridController>
             switch (changeResult.ResultCode)
             {
                 case SudokuBoard.PlacementResult.PlacementResultCode.SUCCESS:
-                    cellTile.SetColourState(CellTile.ColourState.PLAYER_BLUE);
+                    cellTile.SetColourState(ColourState.PLAYER_BLUE);
                     break;
                 case SudokuBoard.PlacementResult.PlacementResultCode.WRONG:
-                    cellTile.SetColourState(CellTile.ColourState.INCORRECT);
+                    cellTile.SetColourState(ColourState.INCORRECT);
                     break;
             }
         }
     }
 
-    public CellTile GetNearestCellTile(Vector2 position, out float distance)
+    public CellTile GetNearestCellTile(Vector2 position, out float minDistance)
     {
-        CellTile nearestTile = _cells[0, 0];
-        distance = float.MaxValue;
+        CellTile nearestCell = _cells[0, 0];
+        minDistance = float.MaxValue;
 
         foreach (CellTile cellTile in _cells)
         {
-            float tileDistance = Vector2.Distance(position, cellTile.transform.position);
-            if (tileDistance < distance)
-            {
-                nearestTile = cellTile;
-                distance = tileDistance;
-            }
+            float cellDistance = Vector2.Distance(position, cellTile.transform.position);
+
+            if (cellDistance > minDistance)
+                continue;
+
+            nearestCell = cellTile;
+            minDistance = cellDistance;
         }
 
-        return nearestTile;
+        return nearestCell;
     }
 
     public CellTile GetCell(Vector2Int position)

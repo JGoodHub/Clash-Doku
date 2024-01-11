@@ -32,7 +32,7 @@ public static class SudokuHelper
 
     // The board is generated using wave function collapse
     // Start with every cell in a superposition of every state
-    // As cells are assigned values (randomly at first) the list of possible states for each cell reduces until it can only be in one state
+    // As cells are assigned values (randomly at first) the list of possible states for all other cells reduces until they can only be in one state
     public static SudokuBoard GenerateSudokuBoard(int seed = -1, float percentageFilled = 0.25f)
     {
         percentageFilled = Mathf.Clamp01(percentageFilled);

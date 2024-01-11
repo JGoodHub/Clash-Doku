@@ -6,17 +6,6 @@ using UnityEngine.UI;
 public class CellTile : MonoBehaviour
 {
 
-    public enum ColourState
-    {
-
-        INITIAL_STATE,
-        PROPOSED_PLACEMENT,
-        PLAYER_BLUE,
-        PLAYER_RED,
-        INCORRECT
-
-    }
-
     [SerializeField] private TextMeshProUGUI _valueText;
     [SerializeField] private Image _background;
     [Space]
@@ -27,7 +16,9 @@ public class CellTile : MonoBehaviour
     [SerializeField] private Color _incorrectColour;
 
     public int X { get; private set; }
+
     public int Y { get; private set; }
+
     public int Value { get; private set; }
 
     public Vector2Int Position => new Vector2Int(X, Y);
@@ -68,5 +59,17 @@ public class CellTile : MonoBehaviour
                 break;
         }
     }
+
+}
+
+
+public enum ColourState
+{
+
+    INITIAL_STATE,
+    PROPOSED_PLACEMENT,
+    PLAYER_BLUE,
+    PLAYER_RED,
+    INCORRECT
 
 }
