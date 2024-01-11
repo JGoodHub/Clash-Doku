@@ -3,7 +3,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class CellTile : MonoBehaviour
+public class BoardCell : MonoBehaviour
 {
 
     [SerializeField] private TextMeshProUGUI _valueText;

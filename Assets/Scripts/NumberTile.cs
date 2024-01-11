@@ -43,8 +43,16 @@ public class NumberTile : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDr
         SortingLayerHandler.Instance.SetSortingLayer(transform, SortingLayer.MOVING);
 
         SetScaleFactor(SortingLayer.MOVING);
+        SetColourState(ColourState.INITIAL_STATE);
 
-        RackController.Instance.StartDraggingTile(this);
+        if (GridController.Instance.IsTileOnBoard(this))
+        {
+            GridController.Instance.HandleDraggingTileOffBoard(this);
+        }
+        else if (RackController.Instance.IsTileOnRack(this))
+        {
+            RackController.Instance.HandleDraggingTileOffRack(this);
+        }
     }
 
     public void OnDrag(PointerEventData eventData)
@@ -59,7 +67,14 @@ public class NumberTile : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDr
     {
         _shadowObject.SetActive(false);
 
-        RackController.Instance.FinishedDraggingTile(this);
+        if (GridController.Instance.IsTileWithinRangeOfValidCell(this, out BoardCell validCell))
+        {
+            GridController.Instance.HandleTilePlacedOnBoard(this, validCell);
+        }
+        else
+        {
+            RackController.Instance.HandleReturningTileToRack(this);
+        }
     }
 
     public void SetScaleFactor(SortingLayer destination)
@@ -77,7 +92,6 @@ public class NumberTile : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDr
                 break;
         }
     }
-
 
     public void SetColourState(ColourState newState)
     {

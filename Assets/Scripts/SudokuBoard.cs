@@ -6,69 +6,13 @@ using Random = UnityEngine.Random;
 public class SudokuBoard
 {
 
-    private List<ProposedPlacements> _proposedChanges;
-
     public readonly BoardState BaseState;
-    public readonly BoardState PreviewState;
     public readonly int[,] Solution;
-
-    public List<ProposedPlacements> ProposedChanges => _proposedChanges;
-
-    public event Action<SudokuBoard, ProposedPlacements> OnProposedChangeAdded;
-
-    public event Action<SudokuBoard> OnProposedChangesReset;
-
-    public event Action<SudokuBoard, List<PlacementResult>> OnProposedChangesCommitted;
 
     public SudokuBoard(int[,] solution, int[,] currentValues)
     {
         BaseState = new BoardState(currentValues);
-        PreviewState = new BoardState(currentValues);
         Solution = solution;
-
-        _proposedChanges = new List<ProposedPlacements>();
-    }
-
-    public void AddProposedValueChange(ProposedPlacements proposedPlacements)
-    {
-        if (_proposedChanges.Exists(change => change.Position == proposedPlacements.Position))
-            return;
-
-        _proposedChanges.Add(proposedPlacements);
-        PreviewState.SetValueAndColour(proposedPlacements.Position, proposedPlacements.Value, ColourState.PROPOSED_PLACEMENT);
-
-        OnProposedChangeAdded?.Invoke(this, proposedPlacements);
-    }
-
-    public void ResetAllProposedValueChanges()
-    {
-        _proposedChanges.Clear();
-        PreviewState.CopyFrom(BaseState);
-        OnProposedChangesReset?.Invoke(this);
-    }
-
-    public void CommitProposedChanges()
-    {
-        PreviewState.CopyFrom(BaseState);
-
-        List<PlacementResult> changeResults = new List<PlacementResult>();
-
-        foreach (ProposedPlacements proposedChange in _proposedChanges)
-        {
-            if (Solution[proposedChange.Position.x, proposedChange.Position.y] == proposedChange.Value)
-            {
-                changeResults.Add(new PlacementResult(proposedChange.Position, PlacementResult.PlacementResultCode.SUCCESS));
-                BaseState.SetValueAndColour(proposedChange.Position, proposedChange.Value, ColourState.PLAYER_BLUE);
-            }
-            else
-            {
-                changeResults.Add(new PlacementResult(proposedChange.Position, PlacementResult.PlacementResultCode.WRONG));
-                BaseState.SetValueAndColour(proposedChange.Position, proposedChange.Value, ColourState.INCORRECT);
-            }
-        }
-
-        _proposedChanges.Clear();
-        OnProposedChangesCommitted?.Invoke(this, changeResults);
     }
 
     public Dictionary<int, int> GetMissingNumberCounts()
@@ -136,39 +80,6 @@ public class SudokuBoard
         return Solution[position.x, position.y];
     }
 
-    public class ProposedPlacements
-    {
-
-        public readonly Vector2Int Position;
-        public readonly int Value;
-
-        public ProposedPlacements(Vector2Int position, int value)
-        {
-            Position = position;
-            Value = value;
-        }
-
-    }
-
-    public class PlacementResult
-    {
-
-        public enum PlacementResultCode
-        {
-            SUCCESS,
-            WRONG
-        }
-
-        public readonly Vector2Int Position;
-        public readonly PlacementResultCode ResultCode;
-
-        public PlacementResult(Vector2Int position, PlacementResultCode resultCode)
-        {
-            Position = position;
-            ResultCode = resultCode;
-        }
-
-    }
 
     public class BoardState
     {

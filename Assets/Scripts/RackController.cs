@@ -22,7 +22,7 @@ public class RackController : SceneSingleton<RackController>
     [SerializeField] private List<RectTransform> _rackSlotsSeven = new List<RectTransform>();
     [SerializeField] private List<RectTransform> _rackSlotsEight = new List<RectTransform>();
     [Space]
-    [SerializeField] private int _tilesCount = 7;
+    [SerializeField] private int _tilesCount = 6;
 
     private Dictionary<int, List<RectTransform>> _rackSlotsByCount = new Dictionary<int, List<RectTransform>>();
 
@@ -44,10 +44,10 @@ public class RackController : SceneSingleton<RackController>
 
     private void Start()
     {
-        MatchController.Instance.Board.OnProposedChangesCommitted += ProposedChangesCommitted;
+        MatchController.Instance.OnProposedPlacementsCommitted += ProposedPlacementsCommitted;
     }
 
-    private void ProposedChangesCommitted(SudokuBoard arg1, List<SudokuBoard.PlacementResult> arg2)
+    private void ProposedPlacementsCommitted(SudokuBoard board, List<PlacementResult> placementResults)
     {
         for (int i = _rackTiles.Count - 1; i >= 0; i--)
         {
@@ -81,6 +81,9 @@ public class RackController : SceneSingleton<RackController>
 
     private void RefreshTilePositions()
     {
+        if (_rackTiles.Count == 0)
+            return;
+
         List<RectTransform> rackSlots = _rackSlotsByCount[_rackTiles.Count];
 
         for (int i = 0; i < _rackTiles.Count; i++)
@@ -94,7 +97,7 @@ public class RackController : SceneSingleton<RackController>
     {
         RefreshTilePositions();
 
-        MatchController.Instance.Board.ResetAllProposedValueChanges();
+        MatchController.Instance.ResetAllProposedPlacements();
     }
 
     public RectTransform GetNearestRackSlot(Vector3 position, out int slotIndex)
@@ -119,38 +122,26 @@ public class RackController : SceneSingleton<RackController>
         return nearestSlot;
     }
 
-    public void StartDraggingTile(NumberTile tile)
+    public bool IsTileOnRack(NumberTile tile)
+    {
+        return _rackTiles.Contains(tile);
+    }
+
+    public void HandleDraggingTileOffRack(NumberTile tile)
     {
         _rackTiles.Remove(tile);
 
         RefreshTilePositions();
     }
 
-    public void FinishedDraggingTile(NumberTile tile)
+    public void HandleReturningTileToRack(NumberTile tile)
     {
-        SudokuBoard board = MatchController.Instance.Board;
+        GetNearestRackSlot(tile.transform.position, out int slotIndex);
+        _rackTiles.Insert(slotIndex, tile);
 
-        CellTile nearestCell = GridController.Instance.GetNearestCellTile(tile.transform.position, out float cellTileDistance);
-        board.BaseState.GetValueAndColour(nearestCell.Position, out int value, out ColourState state);
+        tile.SetScaleFactor(SortingLayer.RACK);
+        SortingLayerHandler.Instance.SetSortingLayer(transform, SortingLayer.RACK);
 
-        // You can't override already correct slots
-        if (cellTileDistance > 0.25f ||
-            (value != -1 && state != ColourState.INCORRECT))
-        {
-            GetNearestRackSlot(tile.transform.position, out int slotIndex);
-            _rackTiles.Insert(slotIndex, tile);
-
-            tile.SetScaleFactor(SortingLayer.RACK);
-
-            RefreshTilePositions();
-
-            return;
-        }
-
-        SudokuBoard.ProposedPlacements proposedPlacements = new SudokuBoard.ProposedPlacements(new Vector2Int(nearestCell.X, nearestCell.Y), tile.Value);
-        board.AddProposedValueChange(proposedPlacements);
-
-        tile.transform.position = (Vector2)nearestCell.transform.position;
-        tile.SetScaleFactor(SortingLayer.BOARD);
+        RefreshTilePositions();
     }
 }

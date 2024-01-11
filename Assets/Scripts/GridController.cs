@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using GoodHub.Core.Runtime;
 using UnityEngine;
 
@@ -10,11 +11,13 @@ public class GridController : SceneSingleton<GridController>
     [SerializeField] private GameObject _regionPrefab;
     [SerializeField] private RectTransform _regionContainer;
 
-    private CellTile[,] _cells = new CellTile[9, 9];
+    private BoardCell[,] _cells = new BoardCell[9, 9];
 
-    private SudokuBoard _mirrorBoard;
+    private Dictionary<NumberTile, Vector2Int> _placementPositionsMap;
 
-    public SudokuBoard MirrorBoard => _mirrorBoard;
+    private SudokuBoard _boardData;
+
+    public SudokuBoard BoardData => _boardData;
 
     private void Awake()
     {
@@ -28,74 +31,68 @@ public class GridController : SceneSingleton<GridController>
                 GameObject regionObject = Instantiate(_regionPrefab, _regionContainer);
                 Region region = regionObject.GetComponent<Region>();
 
-                List<CellTile> generatedCells = region.GenerateCells(xCorner, yCorner);
+                List<BoardCell> generatedCells = region.GenerateCells(xCorner, yCorner);
 
-                foreach (CellTile generatedCell in generatedCells)
+                foreach (BoardCell generatedCell in generatedCells)
                     _cells[generatedCell.X, generatedCell.Y] = generatedCell;
             }
         }
+
+        _placementPositionsMap = new Dictionary<NumberTile, Vector2Int>();
     }
 
     public void SetBoardData(SudokuBoard board)
     {
-        _mirrorBoard = board;
+        _boardData = board;
 
-        CopyBoardPreviewState(_mirrorBoard);
+        CopyBoardState(_boardData);
 
-        _mirrorBoard.OnProposedChangeAdded += ProposedChangeAdded;
-        _mirrorBoard.OnProposedChangesReset += ProposedChangesReset;
-
-        _mirrorBoard.OnProposedChangesCommitted += ProposedChangesCommitted;
+        //MatchController.Instance.OnProposedPlacementAdded += ProposedChangeAdded;
+        MatchController.Instance.OnProposedPlacementsCommitted += ProposedChangesCommitted;
     }
 
-    private void ProposedChangeAdded(SudokuBoard board, SudokuBoard.ProposedPlacements placements)
-    {
-        CellTile cellTile = GetCell(placements.Position);
-        cellTile.SetValue(placements.Value);
-        cellTile.SetColourState(ColourState.PROPOSED_PLACEMENT);
-    }
-
-    private void ProposedChangesReset(SudokuBoard board)
-    {
-        CopyBoardPreviewState(_mirrorBoard);
-    }
-
-    public void CopyBoardPreviewState(SudokuBoard board)
+    public void CopyBoardState(SudokuBoard board)
     {
         for (int y = 0; y < 9; y++)
         {
             for (int x = 0; x < 9; x++)
             {
-                _cells[x, y].SetValue(board.PreviewState.Values[x, y]);
-                _cells[x, y].SetColourState(board.PreviewState.Colours[x, y]);
+                _cells[x, y].SetValue(board.BaseState.Values[x, y]);
+                _cells[x, y].SetColourState(board.BaseState.Colours[x, y]);
             }
         }
     }
+    // private void ProposedChangeAdded(SudokuBoard board, ProposedPlacements placements)
+    // {
+    //     CellTile cellTile = GetCell(placements.Position);
+    //     cellTile.SetValue(placements.Value);
+    //     cellTile.SetColourState(ColourState.PROPOSED_PLACEMENT);
+    // }
 
-    private void ProposedChangesCommitted(SudokuBoard board, List<SudokuBoard.PlacementResult> changeResults)
+    private void ProposedChangesCommitted(SudokuBoard board, List<PlacementResult> changeResults)
     {
-        foreach (SudokuBoard.PlacementResult changeResult in changeResults)
+        foreach (PlacementResult changeResult in changeResults)
         {
-            CellTile cellTile = GetCell(changeResult.Position);
+            BoardCell cellTile = GetCell(changeResult.Position);
 
             switch (changeResult.ResultCode)
             {
-                case SudokuBoard.PlacementResult.PlacementResultCode.SUCCESS:
+                case PlacementResult.PlacementResultCode.SUCCESS:
                     cellTile.SetColourState(ColourState.PLAYER_BLUE);
                     break;
-                case SudokuBoard.PlacementResult.PlacementResultCode.WRONG:
+                case PlacementResult.PlacementResultCode.WRONG:
                     cellTile.SetColourState(ColourState.INCORRECT);
                     break;
             }
         }
     }
 
-    public CellTile GetNearestCellTile(Vector2 position, out float minDistance)
+    public BoardCell GetNearestCellTile(Vector2 position, out float minDistance)
     {
-        CellTile nearestCell = _cells[0, 0];
+        BoardCell nearestCell = _cells[0, 0];
         minDistance = float.MaxValue;
 
-        foreach (CellTile cellTile in _cells)
+        foreach (BoardCell cellTile in _cells)
         {
             float cellDistance = Vector2.Distance(position, cellTile.transform.position);
 
@@ -109,9 +106,51 @@ public class GridController : SceneSingleton<GridController>
         return nearestCell;
     }
 
-    public CellTile GetCell(Vector2Int position)
+    public BoardCell GetCell(Vector2Int position)
     {
         return _cells[position.x, position.y];
+    }
+
+    public bool IsTileOnBoard(NumberTile tile)
+    {
+        return _placementPositionsMap.ContainsKey(tile);
+    }
+
+    public bool IsTileWithinRangeOfValidCell(NumberTile tile, out BoardCell cell)
+    {
+        cell = GetNearestCellTile(tile.transform.position, out float cellTileDistance);
+        _boardData.BaseState.GetValueAndColour(cell.Position, out int value, out ColourState state);
+
+        // To far away from a cell
+        if (cellTileDistance > 0.25f)
+            return false;
+
+        // You can't override already correct slots
+        if (value == -1 || state == ColourState.INCORRECT)
+            return true;
+
+        return false;
+    }
+
+    public void HandleDraggingTileOffBoard(NumberTile tile)
+    {
+        MatchController.Instance.RemoveProposedPlacement(_placementPositionsMap[tile]);
+
+        _placementPositionsMap.Remove(tile);
+    }
+
+    public void HandleTilePlacedOnBoard(NumberTile tile, BoardCell cell)
+    {
+        ProposedPlacements placement = new ProposedPlacements(cell.Position, tile.Value);
+        MatchController.Instance.AddProposedPlacement(placement);
+
+        tile.transform.position = (Vector2)cell.transform.position;
+        tile.SetScaleFactor(SortingLayer.BOARD);
+        tile.SetColourState(ColourState.PROPOSED_PLACEMENT);
+
+        SortingLayerHandler.Instance.SetSortingLayer(transform, SortingLayer.BOARD);
+
+        _placementPositionsMap.Add(tile, cell.Position);
     }
 
 }
