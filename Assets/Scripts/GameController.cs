@@ -5,6 +5,7 @@ using Async.Connector;
 using GoodHub.Core.Runtime;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.Serialization;
 
 public class GameController : GlobalSingleton<GameController>
 {
@@ -52,13 +53,17 @@ public class MatchReport
     public int RoomID;
 
     public OpponentType OpponentType;
-    
-    public int MyScore;
+    public int BotLevel;
+
+    public int PlayerScore;
     public int OpponentScore;
     public int RoundNumber;
 
     public SudokuBoard.BoardState BoardState;
-    
+
+    public List<ProposedGuess> PlayerCorrectGuesses = new List<ProposedGuess>();
+    public List<ProposedGuess> OpponentCorrectGuesses = new List<ProposedGuess>();
+
 }
 
 public enum OpponentType

@@ -7,6 +7,9 @@ using UnityEngine.UI;
 public class NumberTile : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
 
+    [SerializeField] private Image _maskImage;
+    [SerializeField] private Mask _mask;
+    [Space]
     [SerializeField] private GameObject _graphicsRoot;
     [SerializeField] private GameObject _shadowObject;
     [SerializeField] private TextMeshProUGUI _valueText;
@@ -22,22 +25,43 @@ public class NumberTile : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDr
     [SerializeField] private Color _playerTwoColor;
     [SerializeField] private Color _incorrectColour;
 
+    private bool _locked;
+
     private int _value;
 
     public int Value => _value;
 
-    public void SetState(int value, bool isActive = true, bool showShadow = true)
+    public void SetState(int value, bool isActive = true)
     {
         gameObject.SetActive(isActive);
 
         _value = value;
         _valueText.text = _value.ToString();
 
+        SetShadowState(false);
+        SetMaskState(false);
+    }
+
+    public void SetLockedState(bool isLocked)
+    {
+        _locked = isLocked;
+    }
+
+    public void SetShadowState(bool showShadow)
+    {
         _shadowObject.SetActive(showShadow);
+    }
+
+    public void SetMaskState(bool maskActive)
+    {
+        _maskImage.enabled = _mask.enabled = maskActive;
     }
 
     public void OnBeginDrag(PointerEventData eventData)
     {
+        if (_locked)
+            return;
+
         _shadowObject.SetActive(true);
 
         SortingLayerHandler.Instance.SetSortingLayer(transform, SortingLayer.MOVING);
@@ -45,9 +69,9 @@ public class NumberTile : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDr
         SetScaleFactor(SortingLayer.MOVING);
         SetColourState(ColourState.INITIAL_STATE);
 
-        if (GridController.Instance.IsTileOnBoard(this))
+        if (BoardController.Instance.IsTileOnBoard(this))
         {
-            GridController.Instance.HandleDraggingTileOffBoard(this);
+            BoardController.Instance.HandleDraggingTileOffBoard(this);
         }
         else if (RackController.Instance.IsTileOnRack(this))
         {
@@ -57,6 +81,9 @@ public class NumberTile : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDr
 
     public void OnDrag(PointerEventData eventData)
     {
+        if (_locked)
+            return;
+
         Vector3 dragPosition = Camera.main.ScreenToWorldPoint(eventData.position);
         dragPosition.z = 0;
 
@@ -65,11 +92,14 @@ public class NumberTile : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDr
 
     public void OnEndDrag(PointerEventData eventData)
     {
+        if (_locked)
+            return;
+
         _shadowObject.SetActive(false);
 
-        if (GridController.Instance.IsTileWithinRangeOfValidCell(this, out BoardCell validCell))
+        if (BoardController.Instance.IsTileWithinRangeOfValidCell(this, out BoardCell validCell))
         {
-            GridController.Instance.HandleTilePlacedOnBoard(this, validCell);
+            BoardController.Instance.HandleTilePlacedOnBoard(this, validCell);
         }
         else
         {

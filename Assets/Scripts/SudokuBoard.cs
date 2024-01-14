@@ -67,9 +67,13 @@ public class SudokuBoard
         List<Vector2Int> emptyCells = GetAllEmptyCells();
         List<Vector2Int> outputCells = new List<Vector2Int>();
 
-        for (int i = 0; i < Mathf.Min(count, emptyCells.Count); i++)
+        int outputCount = Mathf.Min(count, emptyCells.Count);
+        for (int i = 0; i < outputCount; i++)
         {
-            outputCells.Add(emptyCells[Random.Range(0, emptyCells.Count)]);
+            Vector2Int chosenCell = emptyCells[Random.Range(0, emptyCells.Count)];
+
+            outputCells.Add(chosenCell);
+            emptyCells.Remove(chosenCell);
         }
 
         return outputCells;
@@ -80,6 +84,30 @@ public class SudokuBoard
         return Solution[position.x, position.y];
     }
 
+    public void SolidifyGuessInBaseState(ProposedGuess guess)
+    {
+        if (Solution[guess.Position.x, guess.Position.y] != guess.Value)
+        {
+            throw new Exception($"Only a correct guess can be written into the board BaseState, correct value is {Solution[guess.Position.x, guess.Position.y]}, guess was{guess.Value}");
+        }
+
+        BaseState.Values[guess.Position.x, guess.Position.y] = guess.Value;
+    }
+
+
+    public bool IsComplete()
+    {
+        for (int y = 0; y < 9; y++)
+        {
+            for (int x = 0; x < 9; x++)
+            {
+                if (BaseState.Values[x, y] != Solution[x, y])
+                    return false;
+            }
+        }
+
+        return true;
+    }
 
     public class BoardState
     {

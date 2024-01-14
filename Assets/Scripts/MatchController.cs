@@ -10,8 +10,8 @@ using GoodHub.Core.Runtime;
 using Newtonsoft.Json;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
-using Random = System.Random;
 
 [DefaultExecutionOrder(-10)]
 public class MatchController : SceneSingleton<MatchController>
@@ -22,13 +22,8 @@ public class MatchController : SceneSingleton<MatchController>
     [SerializeField] private int _gameSeed;
     [SerializeField, Range(0.05f, 0.95f)] private float _startingPercentage = 0.25f;
     [Space]
-    [SerializeField] private Text _myDisplayNameText;
-    [SerializeField] private Text _opponentDisplayNameText;
-    [SerializeField] private Text _myScoreText;
-    [SerializeField] private Text _opponentScoreText;
-    [Space]
-    [SerializeField] private GameObject _flyingTilePrefab;
-    [SerializeField] private RectTransform _flyingTileParent;
+    [SerializeField] private GameObject _opponentTilePrefab;
+    [SerializeField] private RectTransform _opponentTileSource;
 
     // FIELDS
 
@@ -37,9 +32,9 @@ public class MatchController : SceneSingleton<MatchController>
     private SudokuBoard _board;
     private int _roundIndex = 1;
 
-    private List<ProposedPlacements> _proposedPlacements;
+    private NumberBag _numberBag;
 
-    public List<ProposedPlacements> ProposedPlacements => _proposedPlacements;
+    private List<ProposedGuess> _playerGuesses;
 
     // PROPS
 
@@ -49,27 +44,26 @@ public class MatchController : SceneSingleton<MatchController>
 
     // EVENTS
 
-    public event Action<SudokuBoard, ProposedPlacements> OnProposedPlacementAdded;
+    public event Action RoundEnded;
 
-    public event Action<SudokuBoard> OnProposedPlacementsReset;
-
-    public event Action<SudokuBoard, List<PlacementResult>> OnProposedPlacementsCommitted;
-
+    public event Action RoundStarted;
 
     private void Start()
     {
+        Canvas.ForceUpdateCanvases();
+
         _matchReport = GameController.Instance.ActiveMatchReport;
         _gameSeed = _matchReport.RoomID;
 
-        _myDisplayNameText.text = CorePlayerData.Instance.DisplayName;
+        HeaderController.Instance.Initialise(CorePlayerData.Instance.DisplayName, "Bot");
 
-        _proposedPlacements = new List<ProposedPlacements>();
+        _playerGuesses = new List<ProposedGuess>();
 
         // TODO Load the board state from the match report
 
         _board = SudokuHelper.GenerateSudokuBoard(_gameSeed, _startingPercentage);
 
-        GridController.Instance.SetBoardData(_board);
+        BoardController.Instance.Initialise(_board);
 
         RackController.Instance.PopulateRack();
 
@@ -78,57 +72,31 @@ public class MatchController : SceneSingleton<MatchController>
 
     public NumberBag GetBoardNumberBag()
     {
-        return new NumberBag(_board, _matchReport.RoomID);
+        return _numberBag ??= new NumberBag(_board, RoundSeed);
     }
 
-    public void AddProposedPlacement(ProposedPlacements proposedPlacements)
+    public void AddProposedPlacement(ProposedGuess proposedGuess)
     {
-        if (_proposedPlacements.Exists(change => change.Position == proposedPlacements.Position))
+        if (_playerGuesses.Exists(guess => guess.Position == proposedGuess.Position))
             return;
 
-        _proposedPlacements.Add(proposedPlacements);
-
-        OnProposedPlacementAdded?.Invoke(_board, proposedPlacements);
+        _playerGuesses.Add(proposedGuess);
     }
 
     public void RemoveProposedPlacement(Vector2Int placementPosition)
     {
-        ProposedPlacements placementToRemove = _proposedPlacements.Find(placement => placement.Position == placementPosition);
+        ProposedGuess guessToRemove = _playerGuesses.Find(guess => guess.Position == placementPosition);
 
-        if (placementToRemove == null)
+        if (guessToRemove == null)
             return;
 
-        _proposedPlacements.Remove(placementToRemove);
+        _playerGuesses.Remove(guessToRemove);
     }
 
     public void ResetAllProposedPlacements()
     {
-        _proposedPlacements.Clear();
-        OnProposedPlacementsReset?.Invoke(_board);
+        //_playerGuesses.Clear();
     }
-
-    public void CommitProposedChanges()
-    {
-        List<PlacementResult> changeResults = new List<PlacementResult>();
-
-        foreach (ProposedPlacements proposedChange in _proposedPlacements)
-        {
-            if (_board.Solution[proposedChange.Position.x, proposedChange.Position.y] == proposedChange.Value)
-            {
-                changeResults.Add(new PlacementResult(proposedChange.Position, PlacementResult.PlacementResultCode.SUCCESS));
-                _board.BaseState.SetValueAndColour(proposedChange.Position, proposedChange.Value, ColourState.PLAYER_BLUE);
-            }
-            else
-            {
-                changeResults.Add(new PlacementResult(proposedChange.Position, PlacementResult.PlacementResultCode.WRONG));
-                _board.BaseState.SetValueAndColour(proposedChange.Position, proposedChange.Value, ColourState.INCORRECT);
-            }
-        }
-
-        _proposedPlacements.Clear();
-        OnProposedPlacementsCommitted?.Invoke(_board, changeResults);
-    }
-
 
     public void EndTurn()
     {
@@ -142,17 +110,28 @@ public class MatchController : SceneSingleton<MatchController>
         }
     }
 
+    private void StartTurn()
+    {
+        RackController.Instance.PopulateRack();
+    }
+
+    private void GameOver()
+    {
+        GameOverPopup gameOverPopup = PopupCanvas.Instance.ShowGameOverPopup();
+        gameOverPopup.Initialise(_matchReport.PlayerScore >= _matchReport.OpponentScore, _matchReport.PlayerScore, _matchReport.OpponentScore);
+    }
+
     private void HandleBotGameEndTurn()
     {
-        List<ProposedPlacements> botPlacements = BotOpponentController.GetBotPlacements(_proposedPlacements, _board, 50, 6);
-        EvaluateRoundSequence(_proposedPlacements, botPlacements);
+        List<ProposedGuess> botPlacements = BotOpponentController.GetBotGuesses(RoundSeed, _playerGuesses, _board, _matchReport.BotLevel, 5);
+        EvaluateRoundResults(_playerGuesses, botPlacements);
     }
 
     private void HandlePvpGameEndTurn()
     {
         // Construct the round package
 
-        RoundDataPackage myRoundData = new RoundDataPackage(_roundIndex, _proposedPlacements);
+        RoundDataPackage myRoundData = new RoundDataPackage(_roundIndex, _playerGuesses);
 
         string roundDataJson = JsonConvert.SerializeObject(myRoundData, Formatting.None);
         Command roundCommand = new Command("ROUND_MOVES", roundDataJson);
@@ -173,72 +152,280 @@ public class MatchController : SceneSingleton<MatchController>
                 }
 
                 // We have the data, show the results
-                EvaluateRoundSequence(myRoundData.ProposedChanges, opponentRoundData.ProposedChanges);
+                EvaluateRoundResults(myRoundData.ProposedGuesses, opponentRoundData.ProposedGuesses);
             });
     }
 
-    private void EvaluateRoundSequence(List<ProposedPlacements> myPlacements, List<ProposedPlacements> opponentPlacements)
+    private void EvaluateRoundResults(List<ProposedGuess> playerGuesses, List<ProposedGuess> opponentGuesses)
     {
-        StartCoroutine(EvaluateRoundSequenceCoroutine(myPlacements, opponentPlacements));
+        List<ProposedGuess> playerCorrectGuesses = playerGuesses
+            .Where(guess => guess.Value == _board.GetSolutionForCell(guess.Position))
+            .OrderBy(guess => guess.Position.y)
+            .ThenBy(guess => guess.Position.x)
+            .ToList();
+
+        List<ProposedGuess> playerWrongGuesses = playerGuesses
+            .Where(guess => guess.Value != _board.GetSolutionForCell(guess.Position))
+            .OrderBy(guess => guess.Position.y)
+            .ThenBy(guess => guess.Position.x)
+            .ToList();
+
+        List<ProposedGuess> opponentCorrectGuesses = opponentGuesses
+            .Where(guess => guess.Value == _board.GetSolutionForCell(guess.Position))
+            .OrderBy(guess => guess.Position.y)
+            .ThenBy(guess => guess.Position.x)
+            .ToList();
+
+        List<ProposedGuess> opponentWrongGuesses = opponentGuesses
+            .Where(guess => guess.Value != _board.GetSolutionForCell(guess.Position))
+            .OrderBy(guess => guess.Position.y)
+            .ThenBy(guess => guess.Position.x)
+            .ToList();
+
+        _matchReport.PlayerCorrectGuesses.AddRange(playerCorrectGuesses);
+        _matchReport.OpponentCorrectGuesses.AddRange(playerCorrectGuesses);
+
+        _matchReport.PlayerScore += playerCorrectGuesses.Select(guess => BoardController.Instance.GetScoreForPosition(guess.Position)).Sum();
+        _matchReport.OpponentScore += opponentCorrectGuesses.Select(guess => BoardController.Instance.GetScoreForPosition(guess.Position)).Sum();
+
+        // Exclude any duplicate guesses so the same value isn't removed twice
+        List<ProposedGuess> uniqueGuesses = new List<ProposedGuess>();
+
+        foreach (ProposedGuess playerCorrectGuess in playerCorrectGuesses)
+        {
+            uniqueGuesses.Add(playerCorrectGuess);
+        }
+
+        foreach (ProposedGuess opponentCorrectGuess in opponentCorrectGuesses)
+        {
+            if (uniqueGuesses.Exists(guess => guess.Position == opponentCorrectGuess.Position))
+                continue;
+
+            uniqueGuesses.Add(opponentCorrectGuess);
+        }
+
+        _numberBag.ConsumeNumbers(uniqueGuesses.Select(guess => guess.Value).ToList());
+
+        RackController.Instance.ClearRack();
+
+        StartCoroutine(CompareGuessesSequenceCoroutine(playerCorrectGuesses, playerWrongGuesses, opponentCorrectGuesses, opponentWrongGuesses));
     }
 
-    private IEnumerator EvaluateRoundSequenceCoroutine(List<ProposedPlacements> myPlacements, List<ProposedPlacements> opponentPlacements)
+    private IEnumerator CompareGuessesSequenceCoroutine(
+        List<ProposedGuess> playerCorrectGuesses, List<ProposedGuess> playerWrongGuesses,
+        List<ProposedGuess> opponentCorrectGuesses, List<ProposedGuess> opponentWrongGuesses)
     {
-        BoardCell flyingTile = Instantiate(_flyingTilePrefab, _flyingTileParent).GetComponent<BoardCell>();
-        CanvasGroup flyingTileAlpha = flyingTile.GetComponent<CanvasGroup>();
-        flyingTile.gameObject.SetActive(false);
+        FooterController.Instance.DisableButtons();
+
+        // Lock all tiles
+
+        BoardController.Instance.LockAllTiles();
+
+        // Show opponent thinking and pause
+
+        yield return new WaitForSeconds(0.5f);
+
+        HeaderController.Instance.OpponentProfile.SetThinkingStatus(true);
+
+        yield return new WaitForSeconds(2f);
+
+        HeaderController.Instance.OpponentProfile.SetThinkingStatus(false);
+
+        yield return new WaitForSeconds(0.5f);
+
+        // Remove all of my placements that failed
+
+        foreach (ProposedGuess playerWrongGuess in playerWrongGuesses)
+        {
+            NumberTile tile = BoardController.Instance.GetTileForPosition(playerWrongGuess.Position);
+
+            tile.SetScaleFactor(SortingLayer.MOVING);
+            SortingLayerHandler.Instance.SetSortingLayer(tile.transform, SortingLayer.MOVING);
+
+            BoardController.Instance.SetBonusCellOccupied(playerWrongGuess.Position, false);
+
+            tile.transform
+                .DOMove(tile.transform.position + Vector3.right * 6f, 1.5f)
+                .SetEase(Ease.InSine)
+                .OnComplete(() =>
+                {
+                    BoardController.Instance.RemoveTileFromBoard(tile);
+                    Destroy(tile.gameObject, 1f);
+                });
+
+            yield return new WaitForSeconds(0.5f);
+        }
 
         yield return new WaitForSeconds(1f);
 
-        foreach (ProposedPlacements opponentPlacement in opponentPlacements)
+        // Turn the remaining ones blue for my correct colour
+
+        foreach (ProposedGuess playerCorrectGuess in playerCorrectGuesses)
         {
-            flyingTile.gameObject.SetActive(true);
-            flyingTile.transform.position = _opponentDisplayNameText.transform.position;
-            flyingTile.SetValue(opponentPlacement.Value);
-            flyingTile.SetColourState(ColourState.PROPOSED_PLACEMENT);
+            NumberTile tile = BoardController.Instance.GetTileForPosition(playerCorrectGuess.Position);
+            tile.SetColourState(ColourState.PLAYER_BLUE);
 
-            Vector3 targetCellPosition = GridController.Instance.GetCell(opponentPlacement.Position).transform.position;
+            yield return new WaitForSeconds(0.3f);
+        }
 
-            flyingTile.transform.DOMove(targetCellPosition, 0.75f).SetEase(Ease.InOutQuad);
+        yield return new WaitForSeconds(0.5f);
+
+        // Have all the correct opponents placements fly in
+
+        foreach (ProposedGuess opponentCorrectGuess in opponentCorrectGuesses)
+        {
+            RectTransform movingParent = SortingLayerHandler.Instance.GetTransformForSortingLayer(SortingLayer.MOVING);
+            NumberTile opponentTile = Instantiate(_opponentTilePrefab, movingParent).GetComponent<NumberTile>();
+
+            opponentTile.transform.position = _opponentTileSource.transform.position;
+
+            opponentTile.SetLockedState(true);
+            opponentTile.SetShadowState(true);
+            opponentTile.SetState(opponentCorrectGuess.Value);
+            opponentTile.SetScaleFactor(SortingLayer.MOVING);
+            opponentTile.SetColourState(ColourState.PLAYER_RED);
+
+            opponentTile.transform
+                .DOMove(BoardController.Instance.GetCell(opponentCorrectGuess.Position).transform.position, 1f)
+                .SetEase(Ease.InOutQuad)
+                .OnComplete(() =>
+                {
+                    SortingLayerHandler.Instance.SetSortingLayer(opponentTile.transform, SortingLayer.BOARD);
+
+                    opponentTile.SetScaleFactor(SortingLayer.BOARD);
+                    opponentTile.SetShadowState(false);
+
+                    BoardController.Instance.SetBonusCellOccupied(opponentCorrectGuess.Position, true);
+
+                    if (_matchReport.PlayerCorrectGuesses.Exists(playerCorrectGuess => opponentCorrectGuess.Position == playerCorrectGuess.Position))
+                    {
+                        opponentTile.SetMaskState(true);
+                    }
+                });
 
             yield return new WaitForSeconds(0.5f);
+        }
 
-            // Did we also have a placement at this location
-            ProposedPlacements myMatchingPlacement = myPlacements.Find(myPlacement => myPlacement.Position.Equals(opponentPlacement.Position));
+        // Handle scoring for the player
 
-            // We didn't place in this square
-            if (myMatchingPlacement == null)
+        Vector3 playerRoundTotalPosition = HeaderController.Instance.PlayerProfile.RoundScorePosition;
+        PointsDingEffect playerRoundTotal = EffectsController.Instance.CreatePointsDing(0, false, playerRoundTotalPosition);
+
+        yield return new WaitForSeconds(0.5f);
+
+        foreach (ProposedGuess guess in playerCorrectGuesses)
+        {
+            BoardCell cell = BoardController.Instance.GetCell(guess.Position);
+
+            int guessScore = BoardController.Instance.GetScoreForPosition(guess.Position);
+
+            PointsDingEffect pointsEffect = EffectsController.Instance.CreatePointsDing(guessScore, true, cell.transform.position);
+
+            pointsEffect.transform
+                .DOMove(playerRoundTotalPosition, 0.75f)
+                .SetEase(Ease.InQuad)
+                .OnComplete(() =>
+                {
+                    playerRoundTotal.IncrementValue(guessScore);
+                    Destroy(pointsEffect.gameObject);
+                });
+
+            yield return new WaitForSeconds(0.4f);
+        }
+
+        yield return new WaitForSeconds(0.75f);
+
+        // Handle scoring for the opponent
+
+        Vector3 opponentRoundTotalPosition = HeaderController.Instance.OpponentProfile.RoundScorePosition;
+        PointsDingEffect opponentRoundTotal = EffectsController.Instance.CreatePointsDing(0, false, opponentRoundTotalPosition);
+
+        yield return new WaitForSeconds(0.5f);
+
+        foreach (ProposedGuess guess in opponentCorrectGuesses)
+        {
+            BoardCell cell = BoardController.Instance.GetCell(guess.Position);
+
+            int guessScore = BoardController.Instance.GetScoreForPosition(guess.Position);
+
+            PointsDingEffect pointsEffect = EffectsController.Instance.CreatePointsDing(guessScore, true, cell.transform.position);
+
+            pointsEffect.transform
+                .DOMove(opponentRoundTotalPosition, 0.75f)
+                .SetEase(Ease.InQuad)
+                .OnComplete(() =>
+                {
+                    opponentRoundTotal.IncrementValue(guessScore);
+                    Destroy(pointsEffect.gameObject);
+                });
+
+            yield return new WaitForSeconds(0.4f);
+        }
+
+        yield return new WaitForSeconds(0.75f);
+
+        // Add both score to the match totals
+
+        yield return new WaitForSeconds(1f);
+
+        Vector3 playerMatchTotalPosition = HeaderController.Instance.PlayerProfile.MatchScorePosition;
+
+        playerRoundTotal.transform
+            .DOMove(playerMatchTotalPosition, 0.5f)
+            .SetEase(Ease.InQuad)
+            .OnComplete(() =>
             {
-                // Is the opponents placement correct
-                if (_board.Solution[opponentPlacement.Position.x, opponentPlacement.Position.y] == opponentPlacement.Value)
-                {
-                    _board.BaseState.SetValueAndColour(opponentPlacement.Position, opponentPlacement.Value, ColourState.PLAYER_RED);
-                }
-                else
-                {
-                    flyingTileAlpha.DOFade(0f, 0.33f);
-                }
+                HeaderController.Instance.PlayerProfile.SetScore(_matchReport.PlayerScore);
+                Destroy(playerRoundTotal.gameObject);
+            });
 
-                yield return new WaitForSeconds(0.34f);
-            }
-            else
+        playerRoundTotal.transform
+            .DOScale(Vector3.one * 0.1f, 0.5f)
+            .SetEase(Ease.InQuad);
+
+        Vector3 opponentMatchTotalPosition = HeaderController.Instance.OpponentProfile.MatchScorePosition;
+
+        opponentRoundTotal.transform
+            .DOMove(opponentMatchTotalPosition, 0.5f)
+            .SetEase(Ease.InQuad)
+            .OnComplete(() =>
             {
-                // Have both players guess correctly
-                if (myMatchingPlacement.Value == _board.GetSolutionForCell(myMatchingPlacement.Position) && opponentPlacement.Value == _board.GetSolutionForCell(opponentPlacement.Position))
-                {
-                    _board.BaseState.SetValueAndColour(opponentPlacement.Position, opponentPlacement.Value, ColourState.INITIAL_STATE);
-                }
-                else if (myMatchingPlacement.Value == _board.GetSolutionForCell(myMatchingPlacement.Position)) // Only ours was right
-                {
-                    _board.BaseState.SetValueAndColour(myMatchingPlacement.Position, myMatchingPlacement.Value, ColourState.PLAYER_BLUE);
-                }
-                else // Only the opponents was right
-                {
-                    _board.BaseState.SetValueAndColour(opponentPlacement.Position, opponentPlacement.Value, ColourState.PLAYER_RED);
-                }
-            }
+                HeaderController.Instance.OpponentProfile.SetScore(_matchReport.OpponentScore);
+                Destroy(opponentRoundTotal.gameObject);
+            });
 
-            yield return new WaitForSeconds(0.5f);
+        opponentRoundTotal.transform
+            .DOScale(Vector3.one * 0.1f, 0.5f)
+            .SetEase(Ease.InQuad);
+
+        // Clean up and getting ready for the next round
+
+        UpdateBoardWithGuesses(playerCorrectGuesses, opponentCorrectGuesses);
+
+        _playerGuesses.Clear();
+
+        FooterController.Instance.EnableButtons();
+
+        if (_board.IsComplete())
+        {
+            GameOver();
+        }
+        else
+        {
+            StartTurn();
+        }
+    }
+
+    private void UpdateBoardWithGuesses(List<ProposedGuess> playerCorrectGuesses, List<ProposedGuess> opponentCorrectGuesses)
+    {
+        foreach (ProposedGuess playerCorrectGuess in playerCorrectGuesses)
+        {
+            _board.SolidifyGuessInBaseState(playerCorrectGuess);
+        }
+
+        foreach (ProposedGuess opponentCorrectGuess in opponentCorrectGuesses)
+        {
+            _board.SolidifyGuessInBaseState(opponentCorrectGuess);
         }
     }
 
@@ -249,76 +436,23 @@ public class RoundDataPackage
 {
 
     public readonly int RoundIndex;
-    public readonly List<ProposedPlacements> ProposedChanges;
+    public readonly List<ProposedGuess> ProposedGuesses;
 
-    public RoundDataPackage(int roundIndex, List<ProposedPlacements> proposedChanges)
+    public RoundDataPackage(int roundIndex, List<ProposedGuess> proposedGuesses)
     {
         RoundIndex = roundIndex;
-        ProposedChanges = proposedChanges;
+        ProposedGuesses = proposedGuesses;
     }
 
 }
 
-public class NumberBag
-{
-    private List<int> _bagNumbers;
-
-    public NumberBag(SudokuBoard board, int seed)
-    {
-        _bagNumbers = new List<int>();
-
-        Random random = new Random(seed);
-        Dictionary<int, int> missingNumberCounts = board.GetMissingNumberCounts();
-
-        foreach (int key in missingNumberCounts.Keys)
-        {
-            for (int i = 0; i < missingNumberCounts[key]; i++)
-            {
-                _bagNumbers.Add(key);
-            }
-        }
-
-        for (int i = 0; i < _bagNumbers.Count * 10; i++)
-        {
-            int indexA = random.Next(0, _bagNumbers.Count);
-            int indexB = random.Next(0, _bagNumbers.Count);
-
-            (_bagNumbers[indexA], _bagNumbers[indexB]) = (_bagNumbers[indexB], _bagNumbers[indexA]);
-        }
-    }
-
-
-    public List<int> PeekNextNumbers(int count)
-    {
-        count = Mathf.Min(count, _bagNumbers.Count);
-
-        List<int> output = new List<int>();
-
-        for (int i = 0; i < count; i++)
-        {
-            output.Add(_bagNumbers[i]);
-        }
-
-        return output;
-    }
-
-    public void ConsumeNumbers(List<int> numbers)
-    {
-        foreach (int number in numbers)
-        {
-            _bagNumbers.Remove(number);
-        }
-    }
-
-}
-
-public class ProposedPlacements
+public class ProposedGuess
 {
 
     public readonly Vector2Int Position;
     public readonly int Value;
 
-    public ProposedPlacements(Vector2Int position, int value)
+    public ProposedGuess(Vector2Int position, int value)
     {
         Position = position;
         Value = value;

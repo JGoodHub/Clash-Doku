@@ -36,4 +36,17 @@ public class FooterController : SceneSingleton<FooterController>
         MatchController.Instance.EndTurn();
     }
 
+    public void EnableButtons()
+    {
+        _homeBtn.interactable = true;
+        _resetTilesButton.interactable = true;
+        _endTurnButton.interactable = true;
+    }
+
+    public void DisableButtons()
+    {
+        _homeBtn.interactable = false;
+        _resetTilesButton.interactable = false;
+        _endTurnButton.interactable = false;
+    }
 }

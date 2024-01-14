@@ -18,6 +18,11 @@ public class MenuController : MonoBehaviour
     [SerializeField] private Button _startNewOnlineGameBtn;
     [SerializeField] private Button _startNewOfflineGameBtn;
     [Space]
+    [SerializeField] private Button _startNewOfflineEasyGameBtn;
+    [SerializeField] private Button _startNewOfflineMediumGameBtn;
+    [SerializeField] private Button _startNewOfflineHardGameBtn;
+    [SerializeField] private Button _startNewOfflineSuperHardGameBtn;
+    [Space]
     [SerializeField] private RectTransform _matchCardsContainer;
     [SerializeField] private GameObject _matchCardPrefab;
 
@@ -25,6 +30,11 @@ public class MenuController : MonoBehaviour
     {
         _startNewOnlineGameBtn.onClick.AddListener(StartNewOnlineAsyncGame);
         _startNewOfflineGameBtn.onClick.AddListener(StartNewOfflineAsyncGame);
+
+        _startNewOfflineEasyGameBtn.onClick.AddListener(StartNewOfflineAsyncGameEasy);
+        _startNewOfflineMediumGameBtn.onClick.AddListener(StartNewOfflineAsyncGameMedium);
+        _startNewOfflineHardGameBtn.onClick.AddListener(StartNewOfflineAsyncGameHard);
+        _startNewOfflineSuperHardGameBtn.onClick.AddListener(StartNewOfflineAsyncGameSuperHard);
     }
 
     private void Start()
@@ -56,12 +66,74 @@ public class MenuController : MonoBehaviour
     {
         MatchReport newMatchReport = new MatchReport
         {
-            RoomID = Random.Range(100000, 999999),
-            OpponentType = OpponentType.Bot
+            RoomID = 0,
+            //RoomID = Random.Range(100000, 999999),
+            OpponentType = OpponentType.Bot,
+            BotLevel = 50
         };
 
-        LocalDataManager.Data.MatchReports.Add(newMatchReport);
-        LocalDataManager.Save();
+        // LocalDataManager.Data.MatchReports.Add(newMatchReport);
+        // LocalDataManager.Save();
+
+        GameController.Instance.LoadIntoMatchScene(newMatchReport);
+    }
+
+    private void StartNewOfflineAsyncGameEasy()
+    {
+        MatchReport newMatchReport = new MatchReport
+        {
+            RoomID = Random.Range(100000, 999999),
+            OpponentType = OpponentType.Bot,
+            BotLevel = 25
+        };
+
+        // LocalDataManager.Data.MatchReports.Add(newMatchReport);
+        // LocalDataManager.Save();
+
+        GameController.Instance.LoadIntoMatchScene(newMatchReport);
+    }
+
+    private void StartNewOfflineAsyncGameMedium()
+    {
+        MatchReport newMatchReport = new MatchReport
+        {
+            RoomID = Random.Range(100000, 999999),
+            OpponentType = OpponentType.Bot,
+            BotLevel = 50
+        };
+
+        // LocalDataManager.Data.MatchReports.Add(newMatchReport);
+        // LocalDataManager.Save();
+
+        GameController.Instance.LoadIntoMatchScene(newMatchReport);
+    }
+
+    private void StartNewOfflineAsyncGameHard()
+    {
+        MatchReport newMatchReport = new MatchReport
+        {
+            RoomID = Random.Range(100000, 999999),
+            OpponentType = OpponentType.Bot,
+            BotLevel = 75
+        };
+
+        // LocalDataManager.Data.MatchReports.Add(newMatchReport);
+        // LocalDataManager.Save();
+
+        GameController.Instance.LoadIntoMatchScene(newMatchReport);
+    }
+
+    private void StartNewOfflineAsyncGameSuperHard()
+    {
+        MatchReport newMatchReport = new MatchReport
+        {
+            RoomID = Random.Range(100000, 999999),
+            OpponentType = OpponentType.Bot,
+            BotLevel = 100
+        };
+
+        // LocalDataManager.Data.MatchReports.Add(newMatchReport);
+        // LocalDataManager.Save();
 
         GameController.Instance.LoadIntoMatchScene(newMatchReport);
     }

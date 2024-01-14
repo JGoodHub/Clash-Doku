@@ -42,23 +42,14 @@ public class RackController : SceneSingleton<RackController>
         _rackSlotsByCount.Add(8, _rackSlotsEight);
     }
 
-    private void Start()
-    {
-        MatchController.Instance.OnProposedPlacementsCommitted += ProposedPlacementsCommitted;
-    }
-
-    private void ProposedPlacementsCommitted(SudokuBoard board, List<PlacementResult> placementResults)
+    public void ClearRack()
     {
         for (int i = _rackTiles.Count - 1; i >= 0; i--)
         {
-            if (_rackTiles[i].gameObject.activeSelf == false)
-            {
-                Destroy(_rackTiles[i]);
-                _rackTiles.RemoveAt(i);
-            }
+            Destroy(_rackTiles[i].gameObject);
         }
 
-        PopulateRack();
+        _rackTiles.Clear();
     }
 
     public void PopulateRack()
@@ -66,12 +57,12 @@ public class RackController : SceneSingleton<RackController>
         NumberBag numberBag = MatchController.Instance.GetBoardNumberBag();
         RectTransform rackSortingLayerRect = SortingLayerHandler.Instance.GetTransformForSortingLayer(SortingLayer.RACK);
 
-        List<int> nextNumbers = numberBag.PeekNextNumbers(_tilesCount);
+        List<int> nextNumbers = numberBag.PeekNextNumbers(_tilesCount - _rackTiles.Count);
 
         foreach (int number in nextNumbers)
         {
             NumberTile numberTile = Instantiate(_numberTilePrefab, rackSortingLayerRect).GetComponent<NumberTile>();
-            numberTile.SetState(number, true, false);
+            numberTile.SetState(number);
 
             _rackTiles.Add(numberTile);
         }
@@ -140,7 +131,7 @@ public class RackController : SceneSingleton<RackController>
         _rackTiles.Insert(slotIndex, tile);
 
         tile.SetScaleFactor(SortingLayer.RACK);
-        SortingLayerHandler.Instance.SetSortingLayer(transform, SortingLayer.RACK);
+        SortingLayerHandler.Instance.SetSortingLayer(tile.transform, SortingLayer.RACK);
 
         RefreshTilePositions();
     }
