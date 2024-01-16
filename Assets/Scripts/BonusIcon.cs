@@ -6,7 +6,6 @@ using UnityEngine.UI;
 
 public class BonusIcon : MonoBehaviour
 {
-
     [SerializeField] private TextMeshProUGUI _multiplierText;
     [Space]
     [SerializeField] private GameObject _emptyState;
@@ -33,16 +32,19 @@ public class BonusIcon : MonoBehaviour
                 _background.color = _x2Colour;
                 _shadow.effectColor = _x2ColourShadow;
                 _cornersBackground.color = _x2Colour;
+
                 break;
             case 4:
                 _background.color = _x4Colour;
                 _shadow.effectColor = _x4ColourShadow;
                 _cornersBackground.color = _x4Colour;
+
                 break;
             case 6:
                 _background.color = _x6Colour;
                 _shadow.effectColor = _x6ColourShadow;
                 _cornersBackground.color = _x6Colour;
+
                 break;
         }
 
@@ -54,5 +56,4 @@ public class BonusIcon : MonoBehaviour
         _emptyState.SetActive(isOccupied == false);
         _occupiedState.SetActive(isOccupied);
     }
-
 }

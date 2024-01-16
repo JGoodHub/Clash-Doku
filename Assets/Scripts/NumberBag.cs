@@ -52,5 +52,4 @@ public class NumberBag
             _bagNumbers.Remove(number);
         }
     }
-
 }

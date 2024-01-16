@@ -6,12 +6,11 @@ using UnityEngine;
 
 public class LocalDataManager : GlobalSingleton<LocalDataManager>
 {
-
     public const string PrefsKey = "local_data_stroe";
 
     private LocalData _data;
 
-    public static LocalData Data => Instance._data;
+    public static LocalData Data => Singleton._data;
 
     protected override void Awake()
     {
@@ -34,13 +33,10 @@ public class LocalDataManager : GlobalSingleton<LocalDataManager>
         if (string.IsNullOrWhiteSpace(serialisedData) == false)
             JsonConvert.PopulateObject(serialisedData, _data);
     }
-
 }
 
 [Serializable]
 public class LocalData
 {
-
     public List<MatchReport> MatchReports = new List<MatchReport>();
-
 }

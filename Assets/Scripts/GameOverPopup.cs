@@ -8,7 +8,6 @@ using UnityEngine.UI;
 
 public class GameOverPopup : MonoBehaviour
 {
-
     [SerializeField] private GameObject _wonRoot;
     [SerializeField] private GameObject _lostRoot;
     [SerializeField] private TextMeshProUGUI _playerUsername;
@@ -26,7 +25,7 @@ public class GameOverPopup : MonoBehaviour
         _wonRoot.SetActive(won);
         _lostRoot.SetActive(won == false);
 
-        // _playerUsername.text = CorePlayerData.Instance.DisplayName;
+        // _playerUsername.text = CorePlayerData.Singleton.DisplayName;
         // _opponentUsername.text = "Bot";
 
         _scoreText.text = $"{playerScore} to {opponentScore}";
@@ -36,5 +35,4 @@ public class GameOverPopup : MonoBehaviour
     {
         SceneManager.LoadScene(1);
     }
-
 }

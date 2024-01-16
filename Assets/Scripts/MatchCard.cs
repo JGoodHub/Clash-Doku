@@ -7,7 +7,6 @@ using UnityEngine.UI;
 
 public class MatchCard : MonoBehaviour
 {
-
     [SerializeField] private TextMeshProUGUI _opponentNameText;
     [Space]
     [SerializeField] private TextMeshProUGUI _myScoreText;
@@ -54,7 +53,6 @@ public class MatchCard : MonoBehaviour
             return;
 
         MatchReport matchReport = LocalDataManager.Data.MatchReports.Find(report => report.RoomID == _room.RoomID);
-        GameController.Instance.LoadIntoMatchScene(matchReport);
+        GameController.Singleton.LoadIntoMatchScene(matchReport);
     }
-
 }

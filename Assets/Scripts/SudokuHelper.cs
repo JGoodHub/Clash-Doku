@@ -7,10 +7,8 @@ using Random = UnityEngine.Random;
 
 public static class SudokuHelper
 {
-
     private class EntropyCell
     {
-
         public readonly int X;
         public readonly int Y;
 
@@ -25,9 +23,8 @@ public static class SudokuHelper
             X = x;
             Y = y;
 
-            PossibleValues = new List<int> {1, 2, 3, 4, 5, 6, 7, 8, 9};
+            PossibleValues = new List<int> { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
         }
-
     }
 
     // The board is generated using wave function collapse
@@ -38,7 +35,9 @@ public static class SudokuHelper
         percentageFilled = Mathf.Clamp01(percentageFilled);
 
         if (seed != -1)
+        {
             Random.InitState(seed);
+        }
 
         // It'll generate a valid one eventually
         while (true)
@@ -73,13 +72,19 @@ public static class SudokuHelper
                     int collapsedValue = targetCell.PossibleValues[Random.Range(0, targetCell.PossibleValues.Count)];
 
                     foreach (EntropyCell rowCell in rowCells)
+                    {
                         rowCell.PossibleValues.Remove(collapsedValue);
+                    }
 
                     foreach (EntropyCell columnCell in columnCells)
+                    {
                         columnCell.PossibleValues.Remove(collapsedValue);
+                    }
 
                     foreach (EntropyCell regionCell in subGridCells)
+                    {
                         regionCell.PossibleValues.Remove(collapsedValue);
+                    }
 
                     targetCell.PossibleValues.RemoveAll(value => value != collapsedValue);
                     targetCell.Collapsed = true;
@@ -114,10 +119,13 @@ public static class SudokuHelper
         List<Vector2Int> subGridIndices = new List<Vector2Int>();
 
         for (int yOff = 0; yOff < 3; yOff++)
+        {
             for (int xOff = 0; xOff < 3; xOff++)
+            {
                 subGridIndices.Add(new Vector2Int(xCorner + xOff, yCorner + yOff));
+            }
+        }
 
         return subGridIndices;
     }
-
 }

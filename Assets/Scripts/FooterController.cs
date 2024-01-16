@@ -8,7 +8,6 @@ using Random = UnityEngine.Random;
 
 public class FooterController : SceneSingleton<FooterController>
 {
-
     [SerializeField] private Button _homeBtn;
     [SerializeField] private Button _resetTilesButton;
     [SerializeField] private Button _endTurnButton;
@@ -23,17 +22,17 @@ public class FooterController : SceneSingleton<FooterController>
 
     private void ResetPlacedTiles()
     {
-        RackController.Instance.ResetPlacedTiles();
+        RackController.Singleton.ResetPlacedTiles();
     }
 
     private void GoToHomeScene()
     {
-        GameController.Instance.LoadHomeScene();
+        GameController.Singleton.LoadHomeScene();
     }
 
     private void EndTurn()
     {
-        MatchController.Instance.EndTurn();
+        MatchController.Singleton.EndTurn();
     }
 
     public void EnableButtons()

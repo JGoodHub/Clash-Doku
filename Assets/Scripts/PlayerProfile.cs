@@ -6,7 +6,6 @@ using UnityEngine;
 
 public class PlayerProfile : MonoBehaviour
 {
-
     [SerializeField] private TextMeshProUGUI _usernameText;
     [SerializeField] private TextMeshProUGUI _scoreValueText;
     [Space]
@@ -36,6 +35,7 @@ public class PlayerProfile : MonoBehaviour
         {
             _scoreValueText.text = newScore.ToString();
             _score = newScore;
+
             return;
         }
 
@@ -49,5 +49,4 @@ public class PlayerProfile : MonoBehaviour
                 _score = newScore;
             });
     }
-
 }

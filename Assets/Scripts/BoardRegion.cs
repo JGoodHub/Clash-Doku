@@ -22,5 +22,4 @@ public class BoardRegion : MonoBehaviour
 
         return _cells;
     }
-
 }

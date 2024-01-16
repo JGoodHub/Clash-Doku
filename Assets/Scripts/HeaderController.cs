@@ -5,7 +5,6 @@ using UnityEngine;
 
 public class HeaderController : SceneSingleton<HeaderController>
 {
-
     [SerializeField] private PlayerProfile _playerProfile;
     [SerializeField] private PlayerProfile _opponentProfile;
 
@@ -18,5 +17,4 @@ public class HeaderController : SceneSingleton<HeaderController>
         _playerProfile.Initialise(playerUsername, 0);
         _opponentProfile.Initialise(opponentUsername, 0);
     }
-    
 }

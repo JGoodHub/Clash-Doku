@@ -5,7 +5,6 @@ using UnityEngine.UI;
 
 public class BoardCell : MonoBehaviour
 {
-
     [SerializeField] private TextMeshProUGUI _valueText;
 
     public int X { get; private set; }
@@ -29,16 +28,13 @@ public class BoardCell : MonoBehaviour
         Value = newValue;
         _valueText.text = Value == -1 ? string.Empty : Value.ToString();
     }
-
 }
 
 public enum ColourState
 {
-
     INITIAL_STATE,
     PROPOSED_PLACEMENT,
     PLAYER_BLUE,
     PLAYER_RED,
     INCORRECT
-
 }

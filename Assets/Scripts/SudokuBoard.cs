@@ -5,7 +5,6 @@ using Random = UnityEngine.Random;
 
 public class SudokuBoard
 {
-
     public readonly BoardState BaseState;
     public readonly int[,] Solution;
 
@@ -68,6 +67,7 @@ public class SudokuBoard
         List<Vector2Int> outputCells = new List<Vector2Int>();
 
         int outputCount = Mathf.Min(count, emptyCells.Count);
+
         for (int i = 0; i < outputCount; i++)
         {
             Vector2Int chosenCell = emptyCells[Random.Range(0, emptyCells.Count)];
@@ -111,7 +111,6 @@ public class SudokuBoard
 
     public class BoardState
     {
-
         public readonly int[,] Values;
         public readonly ColourState[,] Colours;
 
@@ -152,7 +151,5 @@ public class SudokuBoard
             value = Values[position.x, position.y];
             colourState = Colours[position.x, position.y];
         }
-
     }
-
 }

@@ -9,7 +9,6 @@ using Random = UnityEngine.Random;
 
 public class RackController : SceneSingleton<RackController>
 {
-
     [FormerlySerializedAs("_rackTilePrefab")]
     [SerializeField] private GameObject _numberTilePrefab;
     [Space]
@@ -54,8 +53,8 @@ public class RackController : SceneSingleton<RackController>
 
     public void PopulateRack()
     {
-        NumberBag numberBag = MatchController.Instance.GetBoardNumberBag();
-        RectTransform rackSortingLayerRect = SortingLayerHandler.Instance.GetTransformForSortingLayer(SortingLayer.RACK);
+        NumberBag numberBag = MatchController.Singleton.GetBoardNumberBag();
+        RectTransform rackSortingLayerRect = SortingLayerHandler.Singleton.GetTransformForSortingLayer(SortingLayer.RACK);
 
         List<int> nextNumbers = numberBag.PeekNextNumbers(_tilesCount - _rackTiles.Count);
 
@@ -88,7 +87,7 @@ public class RackController : SceneSingleton<RackController>
     {
         RefreshTilePositions();
 
-        MatchController.Instance.ResetAllProposedPlacements();
+        MatchController.Singleton.ResetAllProposedPlacements();
     }
 
     public RectTransform GetNearestRackSlot(Vector3 position, out int slotIndex)
@@ -131,7 +130,7 @@ public class RackController : SceneSingleton<RackController>
         _rackTiles.Insert(slotIndex, tile);
 
         tile.SetScaleFactor(SortingLayer.RACK);
-        SortingLayerHandler.Instance.SetSortingLayer(tile.transform, SortingLayer.RACK);
+        SortingLayerHandler.Singleton.SetSortingLayer(tile.transform, SortingLayer.RACK);
 
         RefreshTilePositions();
     }

@@ -9,7 +9,6 @@ using Random = System.Random;
 
 public class BoardController : SceneSingleton<BoardController>
 {
-
     [InfoBox("Cells on the board are indexed from top left to bottom right, e.g. (0, 0) to (8, 8)")]
     [SerializeField] private List<BoardRegion> _regions = new List<BoardRegion>();
     [Space]
@@ -31,7 +30,7 @@ public class BoardController : SceneSingleton<BoardController>
 
     public void Initialise(SudokuBoard board)
     {
-        _matchReport = GameController.Instance.ActiveMatchReport;
+        _matchReport = GameController.Singleton.ActiveMatchReport;
         _boardData = board;
 
         SetupBoardCells();
@@ -151,6 +150,7 @@ public class BoardController : SceneSingleton<BoardController>
 
         // Can't place over an existing guess
         Vector2Int cellPosition = cell.Position;
+
         if (_playerTilesAndPositions.Exists(item => item.Position == cellPosition))
             return false;
 
@@ -161,7 +161,7 @@ public class BoardController : SceneSingleton<BoardController>
     {
         PositionTilePair tileAndPosition = _playerTilesAndPositions.Find(pair => pair.Tile == tile);
 
-        MatchController.Instance.RemoveProposedPlacement(tileAndPosition.Position);
+        MatchController.Singleton.RemoveProposedPlacement(tileAndPosition.Position);
 
         SetBonusCellOccupied(tileAndPosition.Position, false);
 
@@ -171,13 +171,13 @@ public class BoardController : SceneSingleton<BoardController>
     public void HandleTilePlacedOnBoard(NumberTile tile, BoardCell cell)
     {
         ProposedGuess guess = new ProposedGuess(cell.Position, tile.Value);
-        MatchController.Instance.AddProposedPlacement(guess);
+        MatchController.Singleton.AddProposedPlacement(guess);
 
         tile.transform.position = (Vector2)cell.transform.position;
         tile.SetScaleFactor(SortingLayer.BOARD);
         tile.SetColourState(ColourState.PROPOSED_PLACEMENT);
 
-        SortingLayerHandler.Instance.SetSortingLayer(tile.transform, SortingLayer.BOARD);
+        SortingLayerHandler.Singleton.SetSortingLayer(tile.transform, SortingLayer.BOARD);
 
         SetBonusCellOccupied(cell.Position, true);
 

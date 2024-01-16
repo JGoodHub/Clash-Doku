@@ -5,7 +5,6 @@ using UnityEngine;
 
 public class PointsDingEffect : MonoBehaviour
 {
-
     [SerializeField] private TextMeshProUGUI _pointsTexts;
 
     private int _value;

@@ -3,7 +3,6 @@ using UnityEngine;
 
 public static class BotOpponentController
 {
-
     /// <summary>
     /// Get the moves for the bot opponent in a player versus bot match.
     /// botLevel should range from 0 to 100 where 0 is super easy and 100 is super hard.
@@ -31,5 +30,4 @@ public static class BotOpponentController
 
         return botGuesses;
     }
-
 }

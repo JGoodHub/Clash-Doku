@@ -9,7 +9,6 @@ using UnityEngine.Serialization;
 
 public class GameController : GlobalSingleton<GameController>
 {
-
     private MatchReport _activeMatchReport;
 
     public MatchReport ActiveMatchReport => _activeMatchReport;
@@ -43,13 +42,11 @@ public class GameController : GlobalSingleton<GameController>
         _activeMatchReport = null;
         SceneManager.LoadScene(1);
     }
-
 }
 
 [Serializable]
 public class MatchReport
 {
-
     public int RoomID;
 
     public OpponentType OpponentType;
@@ -63,7 +60,6 @@ public class MatchReport
 
     public List<ProposedGuess> PlayerCorrectGuesses = new List<ProposedGuess>();
     public List<ProposedGuess> OpponentCorrectGuesses = new List<ProposedGuess>();
-
 }
 
 public enum OpponentType

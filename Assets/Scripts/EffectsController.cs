@@ -6,8 +6,6 @@ using UnityEngine;
 
 public class EffectsController : SceneSingleton<EffectsController>
 {
-
-
     [SerializeField] private GameObject _pointsDingEffectPrefab;
 
 
@@ -18,6 +16,4 @@ public class EffectsController : SceneSingleton<EffectsController>
 
         return pointsDingEffect;
     }
-
-
 }

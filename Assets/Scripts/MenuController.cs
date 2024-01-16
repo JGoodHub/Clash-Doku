@@ -12,7 +12,6 @@ using Random = UnityEngine.Random;
 
 public class MenuController : MonoBehaviour
 {
-
     [SerializeField] private TextMeshProUGUI _usernameText;
     [Space]
     [SerializeField] private Button _startNewOnlineGameBtn;
@@ -30,14 +29,14 @@ public class MenuController : MonoBehaviour
 
     private void Start()
     {
-        _usernameText.text = CorePlayerData.Instance.DisplayName;
+        _usernameText.text = CorePlayerData.Singleton.DisplayName;
 
         InvokeRepeating(nameof(RefreshMatchCards), 0f, 10f);
     }
 
     private void StartNewOnlineAsyncGame()
     {
-        RoomMethods.CreateOrJoinRoom(CorePlayerData.Instance.UserID)
+        RoomMethods.CreateOrJoinRoom(CorePlayerData.Singleton.UserID)
             .Then(room =>
             {
                 MatchReport newMatchReport = new MatchReport
@@ -49,7 +48,7 @@ public class MenuController : MonoBehaviour
                 LocalDataManager.Data.MatchReports.Add(newMatchReport);
                 LocalDataManager.Save();
 
-                GameController.Instance.LoadIntoMatchScene(newMatchReport);
+                GameController.Singleton.LoadIntoMatchScene(newMatchReport);
             });
     }
 
@@ -62,7 +61,7 @@ public class MenuController : MonoBehaviour
             BotLevel = 60
         };
 
-        GameController.Instance.LoadIntoMatchScene(newMatchReport);
+        GameController.Singleton.LoadIntoMatchScene(newMatchReport);
     }
 
     private void RefreshMatchCards()
@@ -77,7 +76,7 @@ public class MenuController : MonoBehaviour
         if (AsyncConnector.ConnectionVerified == false)
             return;
 
-        RoomMethods.GetRoomsForUserWithID(CorePlayerData.Instance.UserID)
+        RoomMethods.GetRoomsForUserWithID(CorePlayerData.Singleton.UserID)
             .Then(rooms =>
             {
                 foreach (Room room in rooms)
@@ -87,5 +86,4 @@ public class MenuController : MonoBehaviour
                 }
             });
     }
-
 }

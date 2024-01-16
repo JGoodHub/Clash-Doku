@@ -6,7 +6,6 @@ using UnityEngine.UI;
 
 public class NumberTile : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
-
     [SerializeField] private Image _maskImage;
     [SerializeField] private Mask _mask;
     [Space]
@@ -64,18 +63,18 @@ public class NumberTile : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDr
 
         _shadowObject.SetActive(true);
 
-        SortingLayerHandler.Instance.SetSortingLayer(transform, SortingLayer.MOVING);
+        SortingLayerHandler.Singleton.SetSortingLayer(transform, SortingLayer.MOVING);
 
         SetScaleFactor(SortingLayer.MOVING);
         SetColourState(ColourState.INITIAL_STATE);
 
-        if (BoardController.Instance.IsTileOnBoard(this))
+        if (BoardController.Singleton.IsTileOnBoard(this))
         {
-            BoardController.Instance.HandleDraggingTileOffBoard(this);
+            BoardController.Singleton.HandleDraggingTileOffBoard(this);
         }
-        else if (RackController.Instance.IsTileOnRack(this))
+        else if (RackController.Singleton.IsTileOnRack(this))
         {
-            RackController.Instance.HandleDraggingTileOffRack(this);
+            RackController.Singleton.HandleDraggingTileOffRack(this);
         }
     }
 
@@ -97,13 +96,13 @@ public class NumberTile : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDr
 
         _shadowObject.SetActive(false);
 
-        if (BoardController.Instance.IsTileWithinRangeOfValidCell(this, out BoardCell validCell))
+        if (BoardController.Singleton.IsTileWithinRangeOfValidCell(this, out BoardCell validCell))
         {
-            BoardController.Instance.HandleTilePlacedOnBoard(this, validCell);
+            BoardController.Singleton.HandleTilePlacedOnBoard(this, validCell);
         }
         else
         {
-            RackController.Instance.HandleReturningTileToRack(this);
+            RackController.Singleton.HandleReturningTileToRack(this);
         }
     }
 
@@ -113,12 +112,15 @@ public class NumberTile : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDr
         {
             case SortingLayer.BOARD:
                 _graphicsRoot.transform.localScale = Vector3.one * _boardScaleFactor;
+
                 break;
             case SortingLayer.RACK:
                 _graphicsRoot.transform.localScale = Vector3.one * _rackScaleFactor;
+
                 break;
             case SortingLayer.MOVING:
                 _graphicsRoot.transform.localScale = Vector3.one * _draggingScaleFactor;
+
                 break;
         }
     }
@@ -129,20 +131,24 @@ public class NumberTile : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDr
         {
             case ColourState.INITIAL_STATE:
                 _background.color = _defaultColor;
+
                 break;
             case ColourState.PROPOSED_PLACEMENT:
                 _background.color = _pendingColor;
+
                 break;
             case ColourState.PLAYER_BLUE:
                 _background.color = _playerOneColor;
+
                 break;
             case ColourState.PLAYER_RED:
                 _background.color = _playerTwoColor;
+
                 break;
             case ColourState.INCORRECT:
                 _background.color = _incorrectColour;
+
                 break;
         }
     }
-
 }
