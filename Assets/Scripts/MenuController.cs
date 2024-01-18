@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Async.Connector;
 using Async.Connector.Methods;
 using Async.Connector.Models;
+using GoodHub.Core.Runtime.PopupSystem;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -25,6 +26,12 @@ public class MenuController : MonoBehaviour
     {
         _startNewOnlineGameBtn.onClick.AddListener(StartNewOnlineAsyncGame);
         _startNewOfflineGameBtn.onClick.AddListener(StartNewOfflineAsyncGame);
+        _startNewDevGameBtn.onClick.AddListener(OpenCustomGamePopup);
+    }
+
+    private void OpenCustomGamePopup()
+    {
+        PopupsController.Singleton.EnqueuePopup<CustomGamePopup>("CustomGamePopup");
     }
 
     private void Start()
@@ -58,7 +65,8 @@ public class MenuController : MonoBehaviour
         {
             RoomID = Random.Range(100000, 999999),
             OpponentType = OpponentType.Bot,
-            BotLevel = 60
+            BotLevel = 60,
+            StartingCoverage = 0.4f
         };
 
         GameController.Singleton.LoadIntoMatchScene(newMatchReport);

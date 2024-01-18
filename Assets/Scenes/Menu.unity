@@ -614,7 +614,7 @@ MonoBehaviour:
     m_PressedTrigger: Pressed
     m_SelectedTrigger: Selected
     m_DisabledTrigger: Disabled
-  m_Interactable: 0
+  m_Interactable: 1
   m_TargetGraphic: {fileID: 466706435}
   m_OnClick:
     m_PersistentCalls:
@@ -2194,7 +2194,7 @@ MonoBehaviour:
   _usernameText: {fileID: 493352096}
   _startNewOnlineGameBtn: {fileID: 1136489783}
   _startNewOfflineGameBtn: {fileID: 1512474777}
-  _startNewDevGameBtn: {fileID: 0}
+  _startNewDevGameBtn: {fileID: 466706433}
   _matchCardsContainer: {fileID: 1712657388}
   _matchCardPrefab: {fileID: 5936534932476249316, guid: fa4b4e900c73eae4da435e893426101e, type: 3}
 --- !u!1001 &1178878412

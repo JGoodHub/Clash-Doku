@@ -16,11 +16,9 @@ using UnityEngine.UI;
 [DefaultExecutionOrder(-10)]
 public class MatchController : SceneSingleton<MatchController>
 {
+
     // INSPECTOR
 
-    [SerializeField] private int _gameSeed;
-    [SerializeField, Range(0.05f, 0.95f)] private float _startingPercentage = 0.25f;
-    [Space]
     [SerializeField] private GameObject _opponentTilePrefab;
     [SerializeField] private RectTransform _opponentTileSource;
 
@@ -29,7 +27,6 @@ public class MatchController : SceneSingleton<MatchController>
     private MatchReport _matchReport;
 
     private SudokuBoard _board;
-    private int _roundIndex = 1;
 
     private NumberBag _numberBag;
 
@@ -39,7 +36,7 @@ public class MatchController : SceneSingleton<MatchController>
 
     public SudokuBoard Board => _board;
 
-    public int RoundSeed => _gameSeed * _roundIndex;
+    public int RoundSeed => _matchReport.RoomID * _matchReport.RoundNumber;
 
     // EVENTS
 
@@ -52,7 +49,6 @@ public class MatchController : SceneSingleton<MatchController>
         Canvas.ForceUpdateCanvases();
 
         _matchReport = GameController.Singleton.ActiveMatchReport;
-        _gameSeed = _matchReport.RoomID;
 
         HeaderController.Singleton.Initialise(CorePlayerData.Singleton.DisplayName, "Bot");
 
@@ -60,7 +56,7 @@ public class MatchController : SceneSingleton<MatchController>
 
         // TODO Load the board state from the match report
 
-        _board = SudokuHelper.GenerateSudokuBoard(_gameSeed, _startingPercentage);
+        _board = SudokuHelper.GenerateSudokuBoard(_matchReport.RoomID, _matchReport.StartingCoverage);
 
         BoardController.Singleton.Initialise(_board);
 
@@ -130,7 +126,7 @@ public class MatchController : SceneSingleton<MatchController>
     {
         // Construct the round package
 
-        RoundDataPackage myRoundData = new RoundDataPackage(_roundIndex, _playerGuesses);
+        RoundDataPackage myRoundData = new RoundDataPackage(_matchReport.RoundNumber, _playerGuesses);
 
         string roundDataJson = JsonConvert.SerializeObject(myRoundData, Formatting.None);
         Command roundCommand = new Command("ROUND_MOVES", roundDataJson);
@@ -140,7 +136,7 @@ public class MatchController : SceneSingleton<MatchController>
             {
                 // Look for the opponents moves for this round if they've submitted before us
                 RoundDataPackage opponentRoundData = room.CommandInvocations
-                    .Find(command => command.Extract<RoundDataPackage>().RoundIndex == _roundIndex && command.SenderUserID != roundCommand.SenderUserID)
+                    .Find(command => command.Extract<RoundDataPackage>().RoundIndex == _matchReport.RoundNumber && command.SenderUserID != roundCommand.SenderUserID)
                     .Extract<RoundDataPackage>();
 
                 // Keep checking at intervals
@@ -427,11 +423,13 @@ public class MatchController : SceneSingleton<MatchController>
             _board.SolidifyGuessInBaseState(opponentCorrectGuess);
         }
     }
+
 }
 
 [Serializable]
 public class RoundDataPackage
 {
+
     public readonly int RoundIndex;
     public readonly List<ProposedGuess> ProposedGuesses;
 
@@ -440,10 +438,12 @@ public class RoundDataPackage
         RoundIndex = roundIndex;
         ProposedGuesses = proposedGuesses;
     }
+
 }
 
 public class ProposedGuess
 {
+
     public readonly Vector2Int Position;
     public readonly int Value;
 
@@ -452,14 +452,18 @@ public class ProposedGuess
         Position = position;
         Value = value;
     }
+
 }
 
 public class PlacementResult
 {
+
     public enum PlacementResultCode
     {
+
         SUCCESS,
         WRONG
+
     }
 
     public readonly Vector2Int Position;
@@ -470,4 +474,5 @@ public class PlacementResult
         Position = position;
         ResultCode = resultCode;
     }
+
 }
