@@ -1,22 +1,23 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
-using Random = UnityEngine.Random;
+using Random = System.Random;
 
 public class SudokuBoard
 {
-    public readonly BoardState BaseState;
-    public readonly int[,] Solution;
 
-    public SudokuBoard(int[,] solution, int[,] currentValues)
+    public int[,] BoardState;
+    public int[,] Solution;
+
+    public SudokuBoard(int[,] currentValues, int[,] solution)
     {
-        BaseState = new BoardState(currentValues);
+        BoardState = currentValues;
         Solution = solution;
     }
 
     public Dictionary<int, int> GetMissingNumberCounts()
     {
-        Dictionary<int, int> numberCounts = new Dictionary<int, int>()
+        Dictionary<int, int> numberCounts = new Dictionary<int, int>
         {
             { 1, 0 },
             { 2, 0 },
@@ -33,7 +34,7 @@ public class SudokuBoard
         {
             for (int x = 0; x < 9; x++)
             {
-                if (BaseState.Values[x, y] == -1 || BaseState.Colours[x, y] == ColourState.INCORRECT)
+                if (BoardState[x, y] == -1)
                 {
                     numberCounts[Solution[x, y]]++;
                 }
@@ -51,7 +52,7 @@ public class SudokuBoard
         {
             for (int x = 0; x < 9; x++)
             {
-                if (BaseState.Values[x, y] == -1)
+                if (BoardState[x, y] == -1)
                 {
                     emptyCells.Add(new Vector2Int(x, y));
                 }
@@ -61,8 +62,10 @@ public class SudokuBoard
         return emptyCells;
     }
 
-    public List<Vector2Int> GetRandomEmptyCells(int count)
+    public List<Vector2Int> GetRandomEmptyCells(int count, Random random = null)
     {
+        random ??= new Random();
+
         List<Vector2Int> emptyCells = GetAllEmptyCells();
         List<Vector2Int> outputCells = new List<Vector2Int>();
 
@@ -70,7 +73,7 @@ public class SudokuBoard
 
         for (int i = 0; i < outputCount; i++)
         {
-            Vector2Int chosenCell = emptyCells[Random.Range(0, emptyCells.Count)];
+            Vector2Int chosenCell = emptyCells[random.Next(0, emptyCells.Count)];
 
             outputCells.Add(chosenCell);
             emptyCells.Remove(chosenCell);
@@ -84,6 +87,19 @@ public class SudokuBoard
         return Solution[position.x, position.y];
     }
 
+    public void UpdateBoardWithGuesses(List<ProposedGuess> playerCorrectGuesses, List<ProposedGuess> opponentCorrectGuesses)
+    {
+        foreach (ProposedGuess playerCorrectGuess in playerCorrectGuesses)
+        {
+            SolidifyGuessInBaseState(playerCorrectGuess);
+        }
+
+        foreach (ProposedGuess opponentCorrectGuess in opponentCorrectGuesses)
+        {
+            SolidifyGuessInBaseState(opponentCorrectGuess);
+        }
+    }
+
     public void SolidifyGuessInBaseState(ProposedGuess guess)
     {
         if (Solution[guess.Position.x, guess.Position.y] != guess.Value)
@@ -91,9 +107,60 @@ public class SudokuBoard
             throw new Exception($"Only a correct guess can be written into the board BaseState, correct value is {Solution[guess.Position.x, guess.Position.y]}, guess was{guess.Value}");
         }
 
-        BaseState.Values[guess.Position.x, guess.Position.y] = guess.Value;
+        BoardState[guess.Position.x, guess.Position.y] = guess.Value;
     }
 
+    public List<int> GetCompletedColumns()
+    {
+        List<int> completedColumns = new List<int>();
+
+        for (int x = 0; x < 9; x++)
+        {
+            bool columnComplete = true;
+
+            for (int y = 0; y < 9; y++)
+            {
+                if (BoardState[x, y] != -1)
+                    continue;
+
+                columnComplete = false;
+                break;
+            }
+
+            if (columnComplete)
+            {
+                completedColumns.Add(x);
+            }
+        }
+
+        return completedColumns;
+    }
+
+    public List<int> GetCompletedRows()
+    {
+        List<int> completedRows = new List<int>();
+
+        for (int y = 0; y < 9; y++)
+        {
+            bool rowsComplete = true;
+
+            for (int x = 0; x < 9; x++)
+            {
+                if (BoardState[x, y] != -1)
+                    continue;
+
+                rowsComplete = false;
+                break;
+            }
+
+            if (rowsComplete)
+            {
+                completedRows.Add(y);
+            }
+        }
+
+        return completedRows;
+    }
 
     public bool IsComplete()
     {
@@ -101,7 +168,7 @@ public class SudokuBoard
         {
             for (int x = 0; x < 9; x++)
             {
-                if (BaseState.Values[x, y] != Solution[x, y])
+                if (BoardState[x, y] != Solution[x, y])
                     return false;
             }
         }
@@ -109,47 +176,22 @@ public class SudokuBoard
         return true;
     }
 
-    public class BoardState
+    public SudokuBoard DeepClone()
     {
-        public readonly int[,] Values;
-        public readonly ColourState[,] Colours;
-
-        public BoardState(int[,] initialValues)
-        {
-            Values = new int[9, 9];
-            Colours = new ColourState[9, 9];
-
-            for (int y = 0; y < 9; y++)
-            {
-                for (int x = 0; x < 9; x++)
-                {
-                    Values[x, y] = initialValues[x, y];
-                }
-            }
-        }
-
-        public void CopyFrom(BoardState other)
-        {
-            for (int y = 0; y < 9; y++)
-            {
-                for (int x = 0; x < 9; x++)
-                {
-                    Values[x, y] = other.Values[x, y];
-                    Colours[x, y] = other.Colours[x, y];
-                }
-            }
-        }
-
-        public void SetValueAndColour(Vector2Int position, int value, ColourState colourState)
-        {
-            Values[position.x, position.y] = value;
-            Colours[position.x, position.y] = colourState;
-        }
-
-        public void GetValueAndColour(Vector2Int position, out int value, out ColourState colourState)
-        {
-            value = Values[position.x, position.y];
-            colourState = Colours[position.x, position.y];
-        }
+        int[,] boardState = (int[,])BoardState.Clone();
+        int[,] solution = (int[,])Solution.Clone();
+        
+        return new SudokuBoard(boardState, solution);
     }
+
+    public void SetValueAndColour(Vector2Int position, int value)
+    {
+        BoardState[position.x, position.y] = value;
+    }
+
+    public void GetStateAtPosition(Vector2Int position, out int value)
+    {
+        value = BoardState[position.x, position.y];
+    }
+
 }

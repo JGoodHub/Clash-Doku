@@ -832,6 +832,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9b97a1b31a030ca419bac963ba514987, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _standardMatchConfig: {fileID: 11400000, guid: 7621d6064c0dd4052b7119b60d7c1681, type: 2}
 --- !u!114 &1159849950
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1044,7 +1045,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0, g: 0.101960786, b: 0.07450981, a: 1}
+  m_Color: {r: 0, g: 0.20000002, b: 0.13333334, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1

@@ -1,6 +1,4 @@
-using System;
 using System.Collections;
-using System.Collections.Generic;
 using Async.Connector;
 using GoodHub.Core.Runtime;
 using UnityEngine;
@@ -10,9 +8,16 @@ using UnityEngine.Serialization;
 public class GameController : GlobalSingleton<GameController>
 {
 
+    [SerializeField] private MatchConfig _standardMatchConfig;
+
     private MatchReport _activeMatchReport;
+    private MatchConfig _activeMatchConfig;
 
     public MatchReport ActiveMatchReport => _activeMatchReport;
+
+    public MatchConfig ActiveMatchConfig => _activeMatchConfig;
+
+    public MatchConfig StandardMatchConfig => _standardMatchConfig;
 
     protected override void Awake()
     {
@@ -31,9 +36,10 @@ public class GameController : GlobalSingleton<GameController>
         SceneManager.LoadScene(1);
     }
 
-    public void LoadIntoMatchScene(MatchReport matchReport)
+    public void LoadIntoMatchScene(MatchReport matchReport, MatchConfig matchConfig)
     {
         _activeMatchReport = matchReport;
+        _activeMatchConfig = matchConfig;
 
         SceneManager.LoadScene(2);
     }
@@ -43,35 +49,5 @@ public class GameController : GlobalSingleton<GameController>
         _activeMatchReport = null;
         SceneManager.LoadScene(1);
     }
-
-}
-
-[Serializable]
-public class MatchReport
-{
-
-    public int RoomID;
-
-    public OpponentType OpponentType;
-    public int BotLevel;
-
-    public float StartingCoverage;
-
-    public int PlayerScore;
-    public int OpponentScore;
-    public int RoundNumber;
-
-    public SudokuBoard.BoardState BoardState;
-
-    public List<ProposedGuess> PlayerCorrectGuesses = new List<ProposedGuess>();
-    public List<ProposedGuess> OpponentCorrectGuesses = new List<ProposedGuess>();
-
-}
-
-public enum OpponentType
-{
-
-    Bot,
-    Human
 
 }

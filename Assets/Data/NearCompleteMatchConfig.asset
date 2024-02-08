@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b73e114f75ae4edeb2460060212db6b1, type: 3}
+  m_Name: NearCompleteMatchConfig
+  m_EditorClassIdentifier: 
+  BoardType: 3
+  OpponentType: 1
+  BotLevel: 75
+  BlankCellsCount: 6
+  TimesTwoBonusCount: 2
+  TimesFourBonusCount: 1
+  TimesSixBonusCount: 0

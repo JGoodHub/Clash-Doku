@@ -13,6 +13,7 @@ using Random = UnityEngine.Random;
 
 public class MenuController : MonoBehaviour
 {
+
     [SerializeField] private TextMeshProUGUI _usernameText;
     [Space]
     [SerializeField] private Button _startNewOnlineGameBtn;
@@ -55,7 +56,7 @@ public class MenuController : MonoBehaviour
                 LocalDataManager.Data.MatchReports.Add(newMatchReport);
                 LocalDataManager.Save();
 
-                GameController.Singleton.LoadIntoMatchScene(newMatchReport);
+                GameController.Singleton.LoadIntoMatchScene(newMatchReport, GameController.Singleton.StandardMatchConfig);
             });
     }
 
@@ -64,12 +65,10 @@ public class MenuController : MonoBehaviour
         MatchReport newMatchReport = new MatchReport
         {
             RoomID = Random.Range(100000, 999999),
-            OpponentType = OpponentType.Bot,
-            BotLevel = 60,
-            StartingCoverage = 0.4f
+            OpponentType = OpponentType.Bot
         };
 
-        GameController.Singleton.LoadIntoMatchScene(newMatchReport);
+        GameController.Singleton.LoadIntoMatchScene(newMatchReport, GameController.Singleton.StandardMatchConfig);
     }
 
     private void RefreshMatchCards()
@@ -94,4 +93,5 @@ public class MenuController : MonoBehaviour
                 }
             });
     }
+
 }

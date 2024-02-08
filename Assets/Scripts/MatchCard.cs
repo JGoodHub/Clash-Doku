@@ -53,6 +53,6 @@ public class MatchCard : MonoBehaviour
             return;
 
         MatchReport matchReport = LocalDataManager.Data.MatchReports.Find(report => report.RoomID == _room.RoomID);
-        GameController.Singleton.LoadIntoMatchScene(matchReport);
+        GameController.Singleton.LoadIntoMatchScene(matchReport, GameController.Singleton.StandardMatchConfig);
     }
 }

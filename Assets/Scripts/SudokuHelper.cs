@@ -2,12 +2,13 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using GoodHub.Core.Runtime.Utils;
 using UnityEngine;
-using Random = UnityEngine.Random;
+using Random = System.Random;
 
 public static class SudokuHelper
 {
-    private class EntropyCell
+    private class SuperpositionCell
     {
         public readonly int X;
         public readonly int Y;
@@ -18,7 +19,7 @@ public static class SudokuHelper
 
         public Vector2Int AsVector => new Vector2Int(X, Y);
 
-        public EntropyCell(int x, int y)
+        public SuperpositionCell(int x, int y)
         {
             X = x;
             Y = y;
@@ -30,28 +31,23 @@ public static class SudokuHelper
     // The board is generated using wave function collapse
     // Start with every cell in a superposition of every state
     // As cells are assigned values (randomly at first) the list of possible states for all other cells reduces until they can only be in one state
-    public static SudokuBoard GenerateSudokuBoard(int seed = -1, float percentageFilled = 0.25f)
+    public static SudokuBoard GenerateSudokuBoard(int blankCellsCount, Random random = null)
     {
-        percentageFilled = Mathf.Clamp01(percentageFilled);
-
-        if (seed != -1)
-        {
-            Random.InitState(seed);
-        }
+        random ??= new Random();
 
         // It'll generate a valid one eventually
         while (true)
         {
             try
             {
-                List<EntropyCell> superCells = new List<EntropyCell>();
+                List<SuperpositionCell> superpositionCells = new List<SuperpositionCell>();
                 int[,] solution = new int[9, 9];
 
                 for (int y = 0; y < 9; y++)
                 {
                     for (int x = 0; x < 9; x++)
                     {
-                        superCells.Add(new EntropyCell(x, y));
+                        superpositionCells.Add(new SuperpositionCell(x, y));
                         solution[x, y] = -1;
                     }
                 }
@@ -59,29 +55,30 @@ public static class SudokuHelper
                 for (int i = 0; i < 9 * 9; i++)
                 {
                     // Get the cell with the lowest entropy
-                    int minEntropy = superCells.Where(cell => cell.Collapsed == false).Min(cell => cell.PossibleValues.Count);
-                    List<EntropyCell> lowestEntropyCells = superCells.Where(cell => cell.Collapsed == false && cell.PossibleValues.Count == minEntropy).ToList();
-                    EntropyCell targetCell = lowestEntropyCells[Random.Range(0, lowestEntropyCells.Count)];
+                    int minEntropy = superpositionCells.Where(cell => cell.Collapsed == false).Min(cell => cell.PossibleValues.Count);
+                    
+                    List<SuperpositionCell> lowestEntropyCells = superpositionCells.Where(cell => cell.Collapsed == false && cell.PossibleValues.Count == minEntropy).ToList();
+                    SuperpositionCell targetCell = lowestEntropyCells[random.Next(0, lowestEntropyCells.Count)];
 
-                    List<EntropyCell> rowCells = superCells.Where(cell => cell.Y == targetCell.Y).ToList();
-                    List<EntropyCell> columnCells = superCells.Where(cell => cell.X == targetCell.X).ToList();
+                    List<SuperpositionCell> rowCells = superpositionCells.Where(cell => cell.Y == targetCell.Y).ToList();
+                    List<SuperpositionCell> columnCells = superpositionCells.Where(cell => cell.X == targetCell.X).ToList();
 
                     List<Vector2Int> regionIndices = GetRegionIndices(targetCell.X, targetCell.Y);
-                    List<EntropyCell> subGridCells = superCells.Where(cell => regionIndices.Contains(cell.AsVector)).ToList();
+                    List<SuperpositionCell> subGridCells = superpositionCells.Where(cell => regionIndices.Contains(cell.AsVector)).ToList();
 
-                    int collapsedValue = targetCell.PossibleValues[Random.Range(0, targetCell.PossibleValues.Count)];
+                    int collapsedValue = targetCell.PossibleValues[random.Next(0, targetCell.PossibleValues.Count)];
 
-                    foreach (EntropyCell rowCell in rowCells)
+                    foreach (SuperpositionCell rowCell in rowCells)
                     {
                         rowCell.PossibleValues.Remove(collapsedValue);
                     }
 
-                    foreach (EntropyCell columnCell in columnCells)
+                    foreach (SuperpositionCell columnCell in columnCells)
                     {
                         columnCell.PossibleValues.Remove(collapsedValue);
                     }
 
-                    foreach (EntropyCell regionCell in subGridCells)
+                    foreach (SuperpositionCell regionCell in subGridCells)
                     {
                         regionCell.PossibleValues.Remove(collapsedValue);
                     }
@@ -92,17 +89,32 @@ public static class SudokuHelper
                     solution[targetCell.X, targetCell.Y] = collapsedValue;
                 }
 
+                // Add in blank tiles to make the puzzle
+                
                 int[,] state = new int[9, 9];
 
+                List<Vector2Int> cells = new List<Vector2Int>();
+                
                 for (int y = 0; y < 9; y++)
                 {
                     for (int x = 0; x < 9; x++)
                     {
-                        state[x, y] = Random.Range(0f, 1f) > percentageFilled ? -1 : solution[x, y];
+                        cells.Add(new Vector2Int(x, y));
+                        state[x, y] =  solution[x, y];
                     }
                 }
 
-                return new SudokuBoard(solution, state);
+                for (int i = 0; i < blankCellsCount; i++)
+                {
+                    int blankCellIndex = random.Next(0, cells.Count);
+                    Vector2Int blankCell = cells[blankCellIndex];
+
+                    state[blankCell.x, blankCell.y] = -1;
+                    
+                    cells.RemoveAt(blankCellIndex);
+                }
+                
+                return new SudokuBoard(state, solution);
             }
             catch (Exception e)
             {

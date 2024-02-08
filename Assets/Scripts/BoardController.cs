@@ -9,18 +9,16 @@ using Random = System.Random;
 
 public class BoardController : SceneSingleton<BoardController>
 {
+
     [InfoBox("Cells on the board are indexed from top left to bottom right, e.g. (0, 0) to (8, 8)")]
     [SerializeField] private List<BoardRegion> _regions = new List<BoardRegion>();
     [Space]
     [SerializeField] private GameObject _bonusIconPrefab;
     [SerializeField] private RectTransform _bonusIconsContainer;
-    [Space]
-    [SerializeField, MinMaxSlider(0f, 1f)] private Vector2 _x2BonusProbability = new Vector2(0.8f, 0.9f);
-    [SerializeField, MinMaxSlider(0f, 1f)] private Vector2 _x4BonusProbability = new Vector2(0.9f, 0.967f);
-    [SerializeField, MinMaxSlider(0f, 1f)] private Vector2 _x6BonusProbability = new Vector2(0.967f, 1f);
 
-    private SudokuBoard _boardData;
+    private SudokuBoard _board;
     private MatchReport _matchReport;
+    private MatchConfig _matchConfig;
 
     private BoardCell[,] _cells = new BoardCell[9, 9];
     private int[,] _bonusMultipliers = new int[9, 9];
@@ -31,7 +29,9 @@ public class BoardController : SceneSingleton<BoardController>
     public void Initialise(SudokuBoard board)
     {
         _matchReport = GameController.Singleton.ActiveMatchReport;
-        _boardData = board;
+        _matchConfig = GameController.Singleton.ActiveMatchConfig;
+
+        _board = board;
 
         SetupBoardCells();
 
@@ -51,7 +51,7 @@ public class BoardController : SceneSingleton<BoardController>
                 foreach (BoardCell generatedCell in generatedCells)
                 {
                     _cells[generatedCell.X, generatedCell.Y] = generatedCell;
-                    generatedCell.SetValue(_boardData.BaseState.Values[generatedCell.X, generatedCell.Y]);
+                    generatedCell.SetValue(_board.BoardState[generatedCell.X, generatedCell.Y]);
                 }
 
                 absIndex++;
@@ -63,45 +63,73 @@ public class BoardController : SceneSingleton<BoardController>
     {
         Random random = new Random(_matchReport.RoomID);
 
-        for (int y = 0; y < _bonusMultipliers.GetLength(1); y++)
+        for (int y = 0; y < 9; y++)
         {
-            for (int x = 0; x < _bonusMultipliers.GetLength(0); x++)
+            for (int x = 0; x < 9; x++)
             {
-                if (_boardData.BaseState.Values[x, y] != -1)
-                    continue;
-
-                Vector2Int position = new Vector2Int(x, y);
-
-                float chance = (float)random.NextDouble();
-                int multiplier = 1;
-
-                if (_x2BonusProbability.x <= chance && chance <= _x2BonusProbability.y)
-                {
-                    multiplier = 2;
-                }
-                else if (_x4BonusProbability.x <= chance && chance <= _x4BonusProbability.y)
-                {
-                    multiplier = 4;
-                }
-                else if (_x6BonusProbability.x <= chance && chance <= _x6BonusProbability.y)
-                {
-                    multiplier = 6;
-                }
-
-                _bonusMultipliers[x, y] = multiplier;
-
-                // Create the bonus icon
-
-                if (multiplier > 1)
-                {
-                    BonusIcon bonusIcon = Instantiate(_bonusIconPrefab, _bonusIconsContainer).GetComponent<BonusIcon>();
-                    bonusIcon.transform.position = _cells[x, y].transform.position;
-
-                    bonusIcon.Initialise(_bonusMultipliers[x, y]);
-
-                    _bonusIcons.Add(position, bonusIcon);
-                }
+                _bonusMultipliers[x, y] = 1;
             }
+        }
+
+        int timesTwoBonusCount = _matchConfig.TimesTwoBonusCount;
+        int timesFourBonusCount = _matchConfig.TimesFourBonusCount;
+        int timesSixBonusCount = _matchConfig.TimesSixBonusCount;
+        int totalBonuses = timesTwoBonusCount + timesFourBonusCount + timesSixBonusCount;
+
+        List<Vector2Int> bonusCells = _board.GetRandomEmptyCells(totalBonuses, random);
+
+        if (bonusCells.Count < totalBonuses)
+        {
+            Debug.LogError($"[{GetType()}]: The number of total bonus cells is greater than the number of blank cells on the board, " +
+                           $"either reduce the number of bonuses or increase the number of blank cells");
+            return;
+        }
+
+        int bonusCellIndex = 0;
+
+        for (int i = 0; i < timesTwoBonusCount; i++)
+        {
+            Vector2Int bonusCell = bonusCells[bonusCellIndex];
+
+            _bonusMultipliers[bonusCell.x, bonusCell.y] = 2;
+
+            BonusIcon bonusIcon = Instantiate(_bonusIconPrefab, _bonusIconsContainer).GetComponent<BonusIcon>();
+            bonusIcon.transform.position = _cells[bonusCell.x, bonusCell.y].transform.position;
+
+            bonusIcon.Initialise(_bonusMultipliers[bonusCell.x, bonusCell.y]);
+
+            _bonusIcons.Add(bonusCell, bonusIcon);
+            bonusCellIndex++;
+        }
+
+        for (int i = 0; i < timesFourBonusCount; i++)
+        {
+            Vector2Int bonusCell = bonusCells[bonusCellIndex];
+
+            _bonusMultipliers[bonusCell.x, bonusCell.y] = 4;
+
+            BonusIcon bonusIcon = Instantiate(_bonusIconPrefab, _bonusIconsContainer).GetComponent<BonusIcon>();
+            bonusIcon.transform.position = _cells[bonusCell.x, bonusCell.y].transform.position;
+
+            bonusIcon.Initialise(_bonusMultipliers[bonusCell.x, bonusCell.y]);
+
+            _bonusIcons.Add(bonusCell, bonusIcon);
+            bonusCellIndex++;
+        }
+
+        for (int i = 0; i < timesSixBonusCount; i++)
+        {
+            Vector2Int bonusCell = bonusCells[bonusCellIndex];
+
+            _bonusMultipliers[bonusCell.x, bonusCell.y] = 6;
+
+            BonusIcon bonusIcon = Instantiate(_bonusIconPrefab, _bonusIconsContainer).GetComponent<BonusIcon>();
+            bonusIcon.transform.position = _cells[bonusCell.x, bonusCell.y].transform.position;
+
+            bonusIcon.Initialise(_bonusMultipliers[bonusCell.x, bonusCell.y]);
+
+            _bonusIcons.Add(bonusCell, bonusIcon);
+            bonusCellIndex++;
         }
     }
 
@@ -138,14 +166,14 @@ public class BoardController : SceneSingleton<BoardController>
     public bool IsTileWithinRangeOfValidCell(NumberTile tile, out BoardCell cell)
     {
         cell = GetNearestCellTile(tile.transform.position, out float cellTileDistance);
-        _boardData.BaseState.GetValueAndColour(cell.Position, out int value, out ColourState state);
+        _board.GetStateAtPosition(cell.Position, out int value);
 
         // To far away from a cell
         if (cellTileDistance > 0.25f)
             return false;
 
-        // You can't override already correct slots
-        if (value != -1 && state != ColourState.INCORRECT)
+        // You can't override already occupied cells
+        if (value != -1)
             return false;
 
         // Can't place over an existing guess
@@ -223,11 +251,18 @@ public class BoardController : SceneSingleton<BoardController>
     {
         return 1 * _bonusMultipliers[position.x, position.y];
     }
+
+    public int GetTotalScoreForGuesses(List<ProposedGuess> guesses)
+    {
+        return guesses.Select(guess => GetScoreForPosition(guess.Position)).Sum();
+    }
+
 }
 
 [Serializable]
 public class PositionTilePair
 {
+
     public Vector2Int Position;
     public NumberTile Tile;
 
@@ -236,4 +271,5 @@ public class PositionTilePair
         Position = position;
         Tile = tile;
     }
+
 }

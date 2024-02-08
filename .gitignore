@@ -9,7 +9,8 @@
 /[Bb]uilds/
 /[Ll]ogs/
 /[Mm]emoryCaptures/
-
+/[Uu]serSettings/
+/[Uu]IElementsSchema/
 
 # Asset meta data should only be ignored when the corresponding asset is also ignored
 !/[Aa]ssets/**/*.meta
@@ -64,4 +65,3 @@ crashlytics-build.properties
 Packages/Async-Connector/
 Packages/GoodHub-Core/
 
-UserSettings
