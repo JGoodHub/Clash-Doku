@@ -14,6 +14,15 @@ using Random = System.Random;
 public class MatchController : SceneSingleton<MatchController>
 {
 
+    public enum ParticipantType
+    {
+
+        Player,
+        Opponent
+
+    }
+
+
     // INSPECTOR
 
     [SerializeField] private GameObject _opponentTilePrefab;
@@ -56,9 +65,6 @@ public class MatchController : SceneSingleton<MatchController>
         // TODO Load the board state from the match report
 
         _board = SudokuHelper.GenerateSudokuBoard(_matchConfig.BlankCellsCount, new Random(_matchReport.RoomID));
-
-        _matchReport.CompletedColumns = _board.GetCompletedColumns();
-        _matchReport.CompletedColumns = _board.GetCompletedRows();
 
         BoardController.Singleton.Initialise(_board);
 
@@ -124,16 +130,16 @@ public class MatchController : SceneSingleton<MatchController>
         EvaluateRoundResults(_playerGuesses, botPlacements);
     }
 
-    private List<int> GetPlayerCompletedColumns(SudokuBoard preRoundBoard, List<ProposedGuess> playerCorrectGuesses)
+    private List<int> GetNewlyCompletedColumnsUsingGuesses(SudokuBoard preRoundBoard, List<ProposedGuess> correctGuesses)
     {
         List<int> previouslyCompletedColumns = preRoundBoard.GetCompletedColumns();
         List<int> newlyCompletedColumns = _board.GetCompletedColumns().Except(previouslyCompletedColumns).ToList();
 
-        List<int> playerCompletedColumns = new List<int>();
+        List<int> outputColumns = new List<int>();
 
         foreach (int newlyCompletedColumn in newlyCompletedColumns)
         {
-            bool playerCompletedColumn = true;
+            bool columnCompletedUsingGuesses = true;
 
             for (int y = 0; y < 9; y++)
             {
@@ -142,32 +148,32 @@ public class MatchController : SceneSingleton<MatchController>
                     continue;
 
                 // We filled this square this round
-                if (playerCorrectGuesses.Exists(guess => guess.Position == new Vector2Int(newlyCompletedColumn, y)))
+                if (correctGuesses.Exists(guess => guess.Position == new Vector2Int(newlyCompletedColumn, y)))
                     continue;
 
                 // The opponent filled this square this round
-                playerCompletedColumn = false;
+                columnCompletedUsingGuesses = false;
             }
 
-            if (playerCompletedColumn)
+            if (columnCompletedUsingGuesses)
             {
-                playerCompletedColumns.Add(newlyCompletedColumn);
+                outputColumns.Add(newlyCompletedColumn);
             }
         }
 
-        return playerCompletedColumns;
+        return outputColumns;
     }
 
-    private List<int> GetPlayerCompletedRows(SudokuBoard preRoundBoard, List<ProposedGuess> playerCorrectGuesses)
+    private List<int> GetNewlyCompletedRowsUsingGuesses(SudokuBoard preRoundBoard, List<ProposedGuess> correctGuesses)
     {
         List<int> previouslyCompletedRows = preRoundBoard.GetCompletedRows();
         List<int> newlyCompletedRows = _board.GetCompletedRows().Except(previouslyCompletedRows).ToList();
 
-        List<int> playerCompletedRows = new List<int>();
+        List<int> outputRows = new List<int>();
 
         foreach (int newlyCompletedRow in newlyCompletedRows)
         {
-            bool playerCompletedRow = true;
+            bool rowCompletedUsingGuesses = true;
 
             for (int x = 0; x < 9; x++)
             {
@@ -176,88 +182,57 @@ public class MatchController : SceneSingleton<MatchController>
                     continue;
 
                 // We filled this square this round
-                if (playerCorrectGuesses.Exists(guess => guess.Position == new Vector2Int(x, newlyCompletedRow)))
+                if (correctGuesses.Exists(guess => guess.Position == new Vector2Int(x, newlyCompletedRow)))
                     continue;
 
                 // The opponent filled this square this round
-                playerCompletedRow = false;
+                rowCompletedUsingGuesses = false;
             }
 
-            if (playerCompletedRow)
+            if (rowCompletedUsingGuesses)
             {
-                playerCompletedRows.Add(newlyCompletedRow);
+                outputRows.Add(newlyCompletedRow);
             }
         }
 
-        return playerCompletedRows;
+        return outputRows;
     }
 
-    private List<int> GetOpponentCompletedColumns(SudokuBoard preRoundBoard, List<ProposedGuess> opponentCorrectGuesses)
+    private List<int> GetNewlyCompletedRegionsUsingGuesses(SudokuBoard preRoundBoard, List<ProposedGuess> correctGuesses)
     {
-        List<int> previouslyCompletedColumns = preRoundBoard.GetCompletedColumns();
-        List<int> newlyCompletedColumns = _board.GetCompletedColumns().Except(previouslyCompletedColumns).ToList();
+        List<int> previouslyCompletedRegions = preRoundBoard.GetCompletedRegions();
+        List<int> newlyCompletedRegions = _board.GetCompletedRegions().Except(previouslyCompletedRegions).ToList();
 
-        List<int> opponentCompletedColumns = new List<int>();
+        List<int> outputRegions = new List<int>();
 
-        foreach (int newlyCompletedColumn in newlyCompletedColumns)
+        foreach (int newlyCompletedRegion in newlyCompletedRegions)
         {
-            bool opponentCompletedColumn = true;
+            bool regionCompletedUsingGuesses = true;
 
-            for (int y = 0; y < 9; y++)
+            List<Vector2Int> regionCells = SudokuBoard.GetCellsForRegion(newlyCompletedRegion);
+
+            foreach (Vector2Int regionCell in regionCells)
             {
-                // Was already filled the round before
-                if (preRoundBoard.BoardState[newlyCompletedColumn, y] != -1)
+                // This cell was already filled the round before
+                if (preRoundBoard.BoardState[regionCell.x, regionCell.y] != -1)
                     continue;
 
-                // We filled this square this round
-                if (opponentCorrectGuesses.Exists(guess => guess.Position == new Vector2Int(newlyCompletedColumn, y)))
+
+                // This cell was filled this round
+                if (correctGuesses.Exists(guess => guess.Position == new Vector2Int(regionCell.x, regionCell.y)))
                     continue;
 
-                // The opponent filled this square this round
-                opponentCompletedColumn = false;
+                // The opposing participant filled this cell this round
+                regionCompletedUsingGuesses = false;
             }
 
-            if (opponentCompletedColumn)
+            if (regionCompletedUsingGuesses)
             {
-                opponentCompletedColumns.Add(newlyCompletedColumn);
+                outputRegions.Add(newlyCompletedRegion);
             }
         }
 
-        return opponentCompletedColumns;
-    }
-
-    private List<int> GetOpponentCompletedRows(SudokuBoard preRoundBoard, List<ProposedGuess> opponentCorrectGuesses)
-    {
-        List<int> previouslyCompletedRows = preRoundBoard.GetCompletedRows();
-        List<int> newlyCompletedRows = _board.GetCompletedRows().Except(previouslyCompletedRows).ToList();
-
-        List<int> opponentCompletedRows = new List<int>();
-
-        foreach (int newlyCompletedRow in newlyCompletedRows)
-        {
-            bool opponentCompletedRow = true;
-
-            for (int x = 0; x < 9; x++)
-            {
-                // Was already filled the round before
-                if (preRoundBoard.BoardState[x, newlyCompletedRow] != -1)
-                    continue;
-
-                // We filled this square this round
-                if (opponentCorrectGuesses.Exists(guess => guess.Position == new Vector2Int(x, newlyCompletedRow)))
-                    continue;
-
-                // The opponent filled this square this round
-                opponentCompletedRow = false;
-            }
-
-            if (opponentCompletedRow)
-            {
-                opponentCompletedRows.Add(newlyCompletedRow);
-            }
-        }
-
-        return opponentCompletedRows;
+        return outputRegions;
     }
 
     private void HandlePvpGameEndTurn()
@@ -312,16 +287,12 @@ public class MatchController : SceneSingleton<MatchController>
         _matchReport.OpponentCorrectGuesses.AddRange(opponentCorrectGuesses);
 
         _matchReport.PlayerScore += BoardController.Singleton.GetTotalScoreForGuesses(playerCorrectGuesses) +
-                                    (GetPlayerCompletedColumns(preRoundBoard, playerCorrectGuesses).Count * 9) +
-                                    (GetPlayerCompletedRows(preRoundBoard, playerCorrectGuesses).Count * 9);
+                                    (GetNewlyCompletedColumnsUsingGuesses(preRoundBoard, playerCorrectGuesses).Count * 9) +
+                                    (GetNewlyCompletedRowsUsingGuesses(preRoundBoard, playerCorrectGuesses).Count * 9);
 
         _matchReport.OpponentScore += BoardController.Singleton.GetTotalScoreForGuesses(opponentCorrectGuesses) +
-                                      (GetOpponentCompletedColumns(preRoundBoard, opponentCorrectGuesses).Count * 9) +
-                                      (GetOpponentCompletedRows(preRoundBoard, opponentCorrectGuesses).Count * 9);
-
-        _matchReport.CompletedColumns = _board.GetCompletedColumns();
-        _matchReport.CompletedRows = _board.GetCompletedRows();
-        _matchReport.Board = _board.DeepClone();
+                                      (GetNewlyCompletedColumnsUsingGuesses(preRoundBoard, opponentCorrectGuesses).Count * 9) +
+                                      (GetNewlyCompletedRowsUsingGuesses(preRoundBoard, opponentCorrectGuesses).Count * 9);
 
         // Exclude any duplicate guesses so the same value isn't removed twice
 
@@ -499,64 +470,46 @@ public class MatchController : SceneSingleton<MatchController>
         // Handle individual cell scoring for the player
 
         Vector3 playerRoundTotalPosition = HeaderController.Singleton.PlayerProfile.RoundScorePosition;
-        PointsDingEffect playerRoundTotal = EffectsController.Singleton.CreatePointsDing(0, false, playerRoundTotalPosition);
+        PointsEffect playerRoundTotal = EffectsController.Singleton.CreatePointsDing(0, true, playerRoundTotalPosition);
 
         yield return new WaitForSeconds(0.5f);
 
-        foreach (ProposedGuess playerCorrectGuess in playerCorrectGuesses)
+        if (playerCorrectGuesses.Count > 0)
         {
-            BoardCell cell = BoardController.Singleton.GetCell(playerCorrectGuess.Position);
+            foreach (ProposedGuess playerCorrectGuess in playerCorrectGuesses)
+            {
+                int guessScore = BoardController.Singleton.GetScoreForPosition(playerCorrectGuess.Position);
+                CreateAdditionPointEffect(playerCorrectGuess.Position, playerRoundTotal, guessScore);
 
-            int guessScore = BoardController.Singleton.GetScoreForPosition(playerCorrectGuess.Position);
+                yield return new WaitForSeconds(0.3f);
+            }
 
-            PointsDingEffect pointsEffect = EffectsController.Singleton.CreatePointsDing(guessScore, true, cell.transform.position);
-
-            pointsEffect.transform
-                .DOMove(playerRoundTotalPosition, 0.75f)
-                .SetEase(Ease.InQuad)
-                .OnComplete(() =>
-                {
-                    playerRoundTotal.IncrementValue(guessScore);
-                    Destroy(pointsEffect.gameObject);
-                });
-
-            yield return new WaitForSeconds(0.4f);
+            yield return new WaitForSeconds(0.8f);
         }
-
-        yield return new WaitForSeconds(1f);
 
         // Handle individual cell scoring for the opponent
 
         Vector3 opponentRoundTotalPosition = HeaderController.Singleton.OpponentProfile.RoundScorePosition;
-        PointsDingEffect opponentRoundTotal = EffectsController.Singleton.CreatePointsDing(0, false, opponentRoundTotalPosition);
+        PointsEffect opponentRoundTotal = EffectsController.Singleton.CreatePointsDing(0, true, opponentRoundTotalPosition);
 
         yield return new WaitForSeconds(0.5f);
 
-        foreach (ProposedGuess guess in opponentCorrectGuesses)
+        if (opponentCorrectGuesses.Count > 0)
         {
-            BoardCell cell = BoardController.Singleton.GetCell(guess.Position);
+            foreach (ProposedGuess opponentCorrectGuess in opponentCorrectGuesses)
+            {
+                int guessScore = BoardController.Singleton.GetScoreForPosition(opponentCorrectGuess.Position);
+                CreateAdditionPointEffect(opponentCorrectGuess.Position, opponentRoundTotal, guessScore);
 
-            int guessScore = BoardController.Singleton.GetScoreForPosition(guess.Position);
+                yield return new WaitForSeconds(0.3f);
+            }
 
-            PointsDingEffect pointsEffect = EffectsController.Singleton.CreatePointsDing(guessScore, true, cell.transform.position);
-
-            pointsEffect.transform
-                .DOMove(opponentRoundTotalPosition, 0.75f)
-                .SetEase(Ease.InQuad)
-                .OnComplete(() =>
-                {
-                    opponentRoundTotal.IncrementValue(guessScore);
-                    Destroy(pointsEffect.gameObject);
-                });
-
-            yield return new WaitForSeconds(0.4f);
+            yield return new WaitForSeconds(0.8f);
         }
-
-        yield return new WaitForSeconds(1f);
 
         // Handle bonuses for the player completing a column
 
-        List<int> playerCompletedColumns = GetPlayerCompletedColumns(preRoundBoard, playerCorrectGuesses);
+        List<int> playerCompletedColumns = GetNewlyCompletedColumnsUsingGuesses(preRoundBoard, playerCorrectGuesses);
 
         if (playerCompletedColumns.Count > 0)
         {
@@ -564,23 +517,12 @@ public class MatchController : SceneSingleton<MatchController>
             {
                 for (int y = 0; y < 9; y++)
                 {
-                    Vector2Int cellPosition = new Vector2Int(playerCompletedColumn, y);
-                    BoardCell cell = BoardController.Singleton.GetCell(cellPosition);
-                    PointsDingEffect pointsEffect = EffectsController.Singleton.CreatePointsDing(1, true, cell.transform.position);
-
-                    pointsEffect.transform
-                        .DOMove(playerRoundTotalPosition, 0.65f)
-                        .SetEase(Ease.InQuad)
-                        .OnComplete(() =>
-                        {
-                            playerRoundTotal.IncrementValue(1);
-                            Destroy(pointsEffect.gameObject);
-                        });
+                    CreateAdditionPointEffect(playerCompletedColumn, y, playerRoundTotal, 1);
 
                     yield return new WaitForSeconds(0.15f);
                 }
-                
-                yield return new WaitForSeconds(0.25f);
+
+                yield return new WaitForSeconds(0.3f);
             }
 
             yield return new WaitForSeconds(0.5f);
@@ -588,7 +530,7 @@ public class MatchController : SceneSingleton<MatchController>
 
         // Handle bonuses for the player completing a row
 
-        List<int> playerCompletedRows = GetPlayerCompletedRows(preRoundBoard, playerCorrectGuesses);
+        List<int> playerCompletedRows = GetNewlyCompletedRowsUsingGuesses(preRoundBoard, playerCorrectGuesses);
 
         if (playerCompletedRows.Count > 0)
         {
@@ -596,23 +538,33 @@ public class MatchController : SceneSingleton<MatchController>
             {
                 for (int x = 0; x < 9; x++)
                 {
-                    Vector2Int cellPosition = new Vector2Int(x, playerCompletedRow);
-                    BoardCell cell = BoardController.Singleton.GetCell(cellPosition);
-                    PointsDingEffect pointsEffect = EffectsController.Singleton.CreatePointsDing(1, true, cell.transform.position);
-
-                    pointsEffect.transform
-                        .DOMove(playerRoundTotalPosition, 0.65f)
-                        .SetEase(Ease.InQuad)
-                        .OnComplete(() =>
-                        {
-                            playerRoundTotal.IncrementValue(1);
-                            Destroy(pointsEffect.gameObject);
-                        });
+                    CreateAdditionPointEffect(x, playerCompletedRow, playerRoundTotal, 1);
 
                     yield return new WaitForSeconds(0.15f);
                 }
-                
-                yield return new WaitForSeconds(0.25f);
+
+                yield return new WaitForSeconds(0.3f);
+            }
+
+            yield return new WaitForSeconds(0.5f);
+        }
+
+        // Handle bonuses for the player completing a region
+
+        List<int> playerCompletedRegions = GetNewlyCompletedRegionsUsingGuesses(preRoundBoard, playerCorrectGuesses);
+
+        if (playerCompletedRegions.Count > 0)
+        {
+            foreach (int playerCompletedRegion in playerCompletedRegions)
+            {
+                foreach (Vector2Int regionCell in SudokuBoard.GetCellsForRegion(playerCompletedRegion))
+                {
+                    CreateAdditionPointEffect(regionCell, playerRoundTotal, 1);
+
+                    yield return new WaitForSeconds(0.15f);
+                }
+
+                yield return new WaitForSeconds(0.3f);
             }
 
             yield return new WaitForSeconds(0.5f);
@@ -620,7 +572,7 @@ public class MatchController : SceneSingleton<MatchController>
 
         // Handle bonuses for the opponent completing a column
 
-        List<int> opponentCompletedColumns = GetPlayerCompletedColumns(preRoundBoard, opponentCorrectGuesses);
+        List<int> opponentCompletedColumns = GetNewlyCompletedColumnsUsingGuesses(preRoundBoard, opponentCorrectGuesses);
 
         if (opponentCompletedColumns.Count > 0)
         {
@@ -628,23 +580,12 @@ public class MatchController : SceneSingleton<MatchController>
             {
                 for (int y = 0; y < 9; y++)
                 {
-                    Vector2Int cellPosition = new Vector2Int(opponentCompletedColumn, y);
-                    BoardCell cell = BoardController.Singleton.GetCell(cellPosition);
-                    PointsDingEffect pointsEffect = EffectsController.Singleton.CreatePointsDing(1, true, cell.transform.position);
-
-                    pointsEffect.transform
-                        .DOMove(opponentRoundTotalPosition, 0.65f)
-                        .SetEase(Ease.InQuad)
-                        .OnComplete(() =>
-                        {
-                            opponentRoundTotal.IncrementValue(1);
-                            Destroy(pointsEffect.gameObject);
-                        });
+                    CreateAdditionPointEffect(opponentCompletedColumn, y, opponentRoundTotal, 1);
 
                     yield return new WaitForSeconds(0.15f);
                 }
-                
-                yield return new WaitForSeconds(0.25f);
+
+                yield return new WaitForSeconds(0.3f);
             }
 
             yield return new WaitForSeconds(0.5f);
@@ -652,7 +593,7 @@ public class MatchController : SceneSingleton<MatchController>
 
         // Handle bonuses for the opponent completing a row
 
-        List<int> opponentCompletedRows = GetPlayerCompletedRows(preRoundBoard, opponentCorrectGuesses);
+        List<int> opponentCompletedRows = GetNewlyCompletedRowsUsingGuesses(preRoundBoard, opponentCorrectGuesses);
 
         if (opponentCompletedRows.Count > 0)
         {
@@ -660,29 +601,40 @@ public class MatchController : SceneSingleton<MatchController>
             {
                 for (int x = 0; x < 9; x++)
                 {
-                    Vector2Int cellPosition = new Vector2Int(x, opponentCompletedRow);
-                    BoardCell cell = BoardController.Singleton.GetCell(cellPosition);
-                    PointsDingEffect pointsEffect = EffectsController.Singleton.CreatePointsDing(1, true, cell.transform.position);
-
-                    pointsEffect.transform
-                        .DOMove(opponentRoundTotalPosition, 0.65f)
-                        .SetEase(Ease.InQuad)
-                        .OnComplete(() =>
-                        {
-                            opponentRoundTotal.IncrementValue(1);
-                            Destroy(pointsEffect.gameObject);
-                        });
+                    CreateAdditionPointEffect(x, opponentCompletedRow, opponentRoundTotal, 1);
 
                     yield return new WaitForSeconds(0.15f);
                 }
-                
-                yield return new WaitForSeconds(0.25f);
+
+                yield return new WaitForSeconds(0.3f);
             }
 
             yield return new WaitForSeconds(0.5f);
         }
 
-        // Add both score to the match totals
+
+        // Handle bonuses for the opponent completing a region
+
+        List<int> opponentCompletedRegions = GetNewlyCompletedRegionsUsingGuesses(preRoundBoard, opponentCorrectGuesses);
+
+        if (opponentCompletedRegions.Count > 0)
+        {
+            foreach (int opponentCompletedRegion in opponentCompletedRegions)
+            {
+                foreach (Vector2Int regionCell in SudokuBoard.GetCellsForRegion(opponentCompletedRegion))
+                {
+                    CreateAdditionPointEffect(regionCell, opponentRoundTotal, 1);
+
+                    yield return new WaitForSeconds(0.15f);
+                }
+
+                yield return new WaitForSeconds(0.3f);
+            }
+
+            yield return new WaitForSeconds(0.5f);
+        }
+
+        // Add the players score to the match totals
 
         yield return new WaitForSeconds(1f);
 
@@ -701,6 +653,8 @@ public class MatchController : SceneSingleton<MatchController>
             .DOScale(Vector3.one * 0.1f, 0.5f)
             .SetEase(Ease.InQuad);
 
+        // Add the opponents score to the match totals
+
         Vector3 opponentMatchTotalPosition = HeaderController.Singleton.OpponentProfile.MatchScorePosition;
 
         opponentRoundTotal.transform
@@ -715,6 +669,27 @@ public class MatchController : SceneSingleton<MatchController>
         opponentRoundTotal.transform
             .DOScale(Vector3.one * 0.1f, 0.5f)
             .SetEase(Ease.InQuad);
+    }
+
+    private void CreateAdditionPointEffect(int x, int y, PointsEffect target, int value)
+    {
+        CreateAdditionPointEffect(new Vector2Int(x, y), target, value);
+    }
+
+    private void CreateAdditionPointEffect(Vector2Int sourceCell, PointsEffect target, int value)
+    {
+        Vector2Int cellPosition = sourceCell;
+        BoardCell cell = BoardController.Singleton.GetCell(cellPosition);
+        PointsEffect pointsEffect = EffectsController.Singleton.CreatePointsDing(value, true, cell.transform.position);
+
+        pointsEffect.transform
+            .DOMove(target.transform.position, 0.7f)
+            .SetEase(Ease.InQuad)
+            .OnComplete(() =>
+            {
+                target.IncrementValue(value);
+                Destroy(pointsEffect.gameObject);
+            });
     }
 
 }

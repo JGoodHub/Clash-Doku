@@ -832,7 +832,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9b97a1b31a030ca419bac963ba514987, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _standardMatchConfig: {fileID: 11400000, guid: 7621d6064c0dd4052b7119b60d7c1681, type: 2}
+  _standardMatchConfig: {fileID: 11400000, guid: fef77eb277d9e483981b134e05189d9b, type: 2}
 --- !u!114 &1159849950
 MonoBehaviour:
   m_ObjectHideFlags: 0

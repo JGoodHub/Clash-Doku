@@ -9,9 +9,9 @@ public class EffectsController : SceneSingleton<EffectsController>
     [SerializeField] private GameObject _pointsDingEffectPrefab;
 
 
-    public PointsDingEffect CreatePointsDing(int pointsValue, bool prefixPlus, Vector3 position)
+    public PointsEffect CreatePointsDing(int pointsValue, bool prefixPlus, Vector3 position)
     {
-        PointsDingEffect pointsDingEffect = Instantiate(_pointsDingEffectPrefab, position, quaternion.identity, transform).GetComponent<PointsDingEffect>();
+        PointsEffect pointsDingEffect = Instantiate(_pointsDingEffectPrefab, position, quaternion.identity, transform).GetComponent<PointsEffect>();
         pointsDingEffect.Initialise(pointsValue, prefixPlus);
 
         return pointsDingEffect;

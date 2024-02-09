@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 
-public class PointsDingEffect : MonoBehaviour
+public class PointsEffect : MonoBehaviour
 {
     [SerializeField] private TextMeshProUGUI _pointsTexts;
 

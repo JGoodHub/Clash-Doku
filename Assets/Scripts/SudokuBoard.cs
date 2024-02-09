@@ -162,6 +162,63 @@ public class SudokuBoard
         return completedRows;
     }
 
+    /// <summary>
+    /// Get all the currently completed regions on this board.
+    /// Returned regions are in pure index form where the top left region is 0 and the bottom right is 8.
+    /// </summary>
+    public List<int> GetCompletedRegions()
+    {
+        List<int> completedRegions = new List<int>();
+
+        List<List<Vector2Int>> allRegionCells = GetAllRegionCells();
+
+        for (int regionIndex = 0; regionIndex < allRegionCells.Count; regionIndex++)
+        {
+            bool regionComplete = true;
+
+            foreach (Vector2Int cell in allRegionCells[regionIndex])
+            {
+                if (BoardState[cell.x, cell.y] != -1)
+                    continue;
+
+                regionComplete = false;
+                break;
+            }
+
+            if (regionComplete)
+            {
+                completedRegions.Add(regionIndex);
+            }
+        }
+
+        return completedRegions;
+    }
+
+    private List<List<Vector2Int>> GetAllRegionCells()
+    {
+        List<List<Vector2Int>> sortedRegionCells = new List<List<Vector2Int>>();
+
+        for (int cornerY = 0; cornerY < 9; cornerY += 3)
+        {
+            for (int cornerX = 0; cornerX < 9; cornerX += 3)
+            {
+                List<Vector2Int> regionCells = new List<Vector2Int>();
+
+                for (int regionY = 0; regionY < 3; regionY++)
+                {
+                    for (int regionX = 0; regionX < 3; regionX++)
+                    {
+                        regionCells.Add(new Vector2Int(cornerX + regionX, cornerY + regionY));
+                    }
+                }
+
+                sortedRegionCells.Add(regionCells);
+            }
+        }
+
+        return sortedRegionCells;
+    }
+
     public bool IsComplete()
     {
         for (int y = 0; y < 9; y++)
@@ -180,7 +237,7 @@ public class SudokuBoard
     {
         int[,] boardState = (int[,])BoardState.Clone();
         int[,] solution = (int[,])Solution.Clone();
-        
+
         return new SudokuBoard(boardState, solution);
     }
 
@@ -192,6 +249,26 @@ public class SudokuBoard
     public void GetStateAtPosition(Vector2Int position, out int value)
     {
         value = BoardState[position.x, position.y];
+    }
+
+    public static List<Vector2Int> GetCellsForRegion(int regionIndex)
+    {
+        List<Vector2Int> cells = new List<Vector2Int>();
+
+        // Calculate the top-left cell position of the region
+        int cornerY = regionIndex / 3 * 3;
+        int cornerX = (regionIndex % 3) * 3;
+
+        // Iterate through the cells in the region
+        for (int y = cornerY; y < cornerY + 3; y++)
+        {
+            for (int x = cornerX; x < cornerX + 3; x++)
+            {
+                cells.Add(new Vector2Int(x, y));
+            }
+        }
+
+        return cells;
     }
 
 }

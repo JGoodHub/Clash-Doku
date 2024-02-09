@@ -6,7 +6,7 @@ using UnityEngine;
 public class MatchConfig : ScriptableObject
 {
 
-    public BoardType BoardType = BoardType.NineByNine;
+    public BoardSize boardSize = BoardSize.NineByNine;
 
     public OpponentType OpponentType = OpponentType.Bot;
     public int BotLevel = 50;
@@ -19,7 +19,7 @@ public class MatchConfig : ScriptableObject
 
 }
 
-public enum BoardType
+public enum BoardSize
 {
 
     FourByFour,

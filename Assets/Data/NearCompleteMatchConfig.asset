@@ -15,7 +15,7 @@ MonoBehaviour:
   BoardType: 3
   OpponentType: 1
   BotLevel: 75
-  BlankCellsCount: 6
-  TimesTwoBonusCount: 2
-  TimesFourBonusCount: 1
-  TimesSixBonusCount: 0
+  BlankCellsCount: 12
+  TimesTwoBonusCount: 3
+  TimesFourBonusCount: 2
+  TimesSixBonusCount: 1
