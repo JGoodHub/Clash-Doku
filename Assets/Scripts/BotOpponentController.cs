@@ -1,12 +1,14 @@
 ﻿using System.Collections.Generic;
+using GoodHub.Core.Runtime;
 using UnityEngine;
 
-public static class BotOpponentController
+public class BotOpponentController : SceneSingleton<BotOpponentController>
 {
-    /// <summary>
-    /// Get the moves for the bot opponent in a player versus bot match.
-    /// botLevel should range from 0 to 100 where 0 is super easy and 100 is super hard.
-    /// </summary>
+    
+    
+    
+    
+    
     public static List<ProposedGuess> GetBotGuesses(int seed, List<ProposedGuess> playerPlacements, SudokuBoard sudokuBoard, int botLevel, int placementsToMake)
     {
         System.Random random = new System.Random(seed);
