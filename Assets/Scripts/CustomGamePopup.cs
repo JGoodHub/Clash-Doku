@@ -41,7 +41,7 @@ public class CustomGamePopup : PopupBase
         };
 
         MatchConfig customMatchConfig = ScriptableObject.CreateInstance<MatchConfig>();
-        customMatchConfig.BotLevel = Mathf.RoundToInt(_botDifficultySlider.value * 100);
+        //customMatchConfig.BotLevel = Mathf.RoundToInt(_botDifficultySlider.value * 100);
         customMatchConfig.BlankCellsCount = Mathf.RoundToInt(_blankCellsSlider.value * 100);
 
         GameController.Singleton.LoadIntoMatchScene(customMatchReport, customMatchConfig);

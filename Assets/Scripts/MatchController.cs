@@ -13,13 +13,10 @@ using Random = System.Random;
 [DefaultExecutionOrder(-10)]
 public class MatchController : SceneSingleton<MatchController>
 {
-
     public enum ParticipantType
     {
-
         Player,
         Opponent
-
     }
 
 
@@ -126,7 +123,9 @@ public class MatchController : SceneSingleton<MatchController>
 
     private void HandleBotGameEndTurn()
     {
-        List<ProposedGuess> botPlacements = BotOpponentController.GetBotGuesses(RoundSeed, _playerGuesses, _board, _matchConfig.BotLevel, 5);
+        List<ProposedGuess> botPlacements = BotOpponentController.GetBotGuesses(RoundSeed,
+            _playerGuesses, _board, _matchConfig, _matchReport, 5);
+
         EvaluateRoundResults(_playerGuesses, botPlacements);
     }
 
@@ -288,11 +287,14 @@ public class MatchController : SceneSingleton<MatchController>
 
         _matchReport.PlayerScore += BoardController.Singleton.GetTotalScoreForGuesses(playerCorrectGuesses) +
                                     (GetNewlyCompletedColumnsUsingGuesses(preRoundBoard, playerCorrectGuesses).Count * 9) +
-                                    (GetNewlyCompletedRowsUsingGuesses(preRoundBoard, playerCorrectGuesses).Count * 9);
+                                    (GetNewlyCompletedRowsUsingGuesses(preRoundBoard, playerCorrectGuesses).Count * 9) +
+                                    (GetNewlyCompletedRegionsUsingGuesses(preRoundBoard, playerCorrectGuesses).Count * 9);
 
         _matchReport.OpponentScore += BoardController.Singleton.GetTotalScoreForGuesses(opponentCorrectGuesses) +
                                       (GetNewlyCompletedColumnsUsingGuesses(preRoundBoard, opponentCorrectGuesses).Count * 9) +
-                                      (GetNewlyCompletedRowsUsingGuesses(preRoundBoard, opponentCorrectGuesses).Count * 9);
+                                      (GetNewlyCompletedRowsUsingGuesses(preRoundBoard, opponentCorrectGuesses).Count * 9) +
+                                      (GetNewlyCompletedRegionsUsingGuesses(preRoundBoard, opponentCorrectGuesses).Count * 9);
+
 
         // Exclude any duplicate guesses so the same value isn't removed twice
 
@@ -691,13 +693,11 @@ public class MatchController : SceneSingleton<MatchController>
                 Destroy(pointsEffect.gameObject);
             });
     }
-
 }
 
 [Serializable]
 public class RoundDataPackage
 {
-
     public readonly int RoundIndex;
     public readonly List<ProposedGuess> ProposedGuesses;
 
@@ -706,12 +706,10 @@ public class RoundDataPackage
         RoundIndex = roundIndex;
         ProposedGuesses = proposedGuesses;
     }
-
 }
 
 public class ProposedGuess
 {
-
     public readonly Vector2Int Position;
     public readonly int Value;
 
@@ -720,18 +718,14 @@ public class ProposedGuess
         Position = position;
         Value = value;
     }
-
 }
 
 public class PlacementResult
 {
-
     public enum PlacementResultCode
     {
-
         SUCCESS,
         WRONG
-
     }
 
     public readonly Vector2Int Position;
@@ -742,5 +736,4 @@ public class PlacementResult
         Position = position;
         ResultCode = resultCode;
     }
-
 }

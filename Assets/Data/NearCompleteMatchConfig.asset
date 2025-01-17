@@ -12,10 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b73e114f75ae4edeb2460060212db6b1, type: 3}
   m_Name: NearCompleteMatchConfig
   m_EditorClassIdentifier: 
-  BoardType: 3
+  boardSize: 3
   OpponentType: 1
   BotLevel: 75
-  BlankCellsCount: 12
+  BlankCellsCount: 20
   TimesTwoBonusCount: 3
   TimesFourBonusCount: 2
   TimesSixBonusCount: 1

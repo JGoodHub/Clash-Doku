@@ -246,9 +246,9 @@ public class SudokuBoard
         BoardState[position.x, position.y] = value;
     }
 
-    public void GetStateAtPosition(Vector2Int position, out int value)
+    public int GetStateAtPosition(Vector2Int position)
     {
-        value = BoardState[position.x, position.y];
+        return BoardState[position.x, position.y];
     }
 
     public static List<Vector2Int> GetCellsForRegion(int regionIndex)

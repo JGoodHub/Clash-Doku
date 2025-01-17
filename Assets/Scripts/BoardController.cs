@@ -9,7 +9,6 @@ using Random = System.Random;
 
 public class BoardController : SceneSingleton<BoardController>
 {
-
     [InfoBox("Cells on the board are indexed from top left to bottom right, e.g. (0, 0) to (8, 8)")]
     [SerializeField] private List<BoardRegion> _regions = new List<BoardRegion>();
     [Space]
@@ -166,7 +165,7 @@ public class BoardController : SceneSingleton<BoardController>
     public bool IsTileWithinRangeOfValidCell(NumberTile tile, out BoardCell cell)
     {
         cell = GetNearestCellTile(tile.transform.position, out float cellTileDistance);
-        _board.GetStateAtPosition(cell.Position, out int value);
+        int value = _board.GetStateAtPosition(cell.Position);
 
         // To far away from a cell
         if (cellTileDistance > 0.25f)
@@ -256,13 +255,11 @@ public class BoardController : SceneSingleton<BoardController>
     {
         return guesses.Select(guess => GetScoreForPosition(guess.Position)).Sum();
     }
-
 }
 
 [Serializable]
 public class PositionTilePair
 {
-
     public Vector2Int Position;
     public NumberTile Tile;
 
@@ -271,5 +268,4 @@ public class PositionTilePair
         Position = position;
         Tile = tile;
     }
-
 }
