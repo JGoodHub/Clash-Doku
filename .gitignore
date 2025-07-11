@@ -65,3 +65,4 @@ crashlytics-build.properties
 Packages/Async-Connector/
 Packages/GoodHub-Core/
 
+**/**/.DS_Store
