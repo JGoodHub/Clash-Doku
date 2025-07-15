@@ -16,18 +16,40 @@ public class MatchConfig : ScriptableObject
 
     [Header("Opponent Settings")]
     public OpponentType OpponentType = OpponentType.Bot;
-    public int BotLevel = 50;
+    public int TargetBotScore = 100;
 
     [Header("Draw Settings")]
     public int DrawTilesCount = 5;
+
+    public int GetBoardSizeCellCount()
+    {
+        switch (boardSize)
+        {
+            case BoardSize.FourByFour:
+                return 16;
+            case BoardSize.SixBySix:
+                return 36;
+            case BoardSize.EightByEight:
+                return 64;
+            case BoardSize.NineByNine:
+                return 81;
+            default:
+                return 0;
+        }
+    }
+
+    public int GetStartingOccupiedCellsCount()
+    {
+        return GetBoardSizeCellCount() - BlankCellsCount;
+    }
 }
 
 public enum BoardSize
 {
-    FourByFour,
-    SixBySix,
-    EightByEight,
-    NineByNine
+    FourByFour = 16,
+    SixBySix = 36,
+    EightByEight = 64,
+    NineByNine = 81
 }
 
 public enum OpponentType

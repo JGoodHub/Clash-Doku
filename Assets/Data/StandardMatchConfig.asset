@@ -12,10 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b73e114f75ae4edeb2460060212db6b1, type: 3}
   m_Name: StandardMatchConfig
   m_EditorClassIdentifier: 
-  BoardType: 3
-  OpponentType: 1
-  BotLevel: 100
+  boardSize: 81
   BlankCellsCount: 54
   TimesTwoBonusCount: 9
   TimesFourBonusCount: 6
   TimesSixBonusCount: 3
+  OpponentType: 1
+  TargetBotScore: 200
+  DrawTilesCount: 5

@@ -17,4 +17,9 @@ public class MatchReport
     public List<ProposedGuess> PlayerCorrectGuesses = new List<ProposedGuess>();
     public List<ProposedGuess> OpponentCorrectGuesses = new List<ProposedGuess>();
 
+    public int GetTotalCorrectGuesses()
+    {
+        return PlayerCorrectGuesses.Count + OpponentCorrectGuesses.Count;
+    }
+
 }

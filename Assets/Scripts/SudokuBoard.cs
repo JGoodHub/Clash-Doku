@@ -5,9 +5,8 @@ using Random = System.Random;
 
 public class SudokuBoard
 {
-
-    public int[,] BoardState;
-    public int[,] Solution;
+    public readonly int[,] BoardState;
+    public readonly int[,] Solution;
 
     public SudokuBoard(int[,] currentValues, int[,] solution)
     {
@@ -62,6 +61,24 @@ public class SudokuBoard
         return emptyCells;
     }
 
+    public List<Vector2Int> GetAllOccupiedCells()
+    {
+        List<Vector2Int> occupiedCells = new List<Vector2Int>();
+
+        for (int y = 0; y < 9; y++)
+        {
+            for (int x = 0; x < 9; x++)
+            {
+                if (BoardState[x, y] > -1)
+                {
+                    occupiedCells.Add(new Vector2Int(x, y));
+                }
+            }
+        }
+
+        return occupiedCells;
+    }
+
     public List<Vector2Int> GetRandomEmptyCells(int count, Random random = null)
     {
         random ??= new Random();
@@ -87,7 +104,8 @@ public class SudokuBoard
         return Solution[position.x, position.y];
     }
 
-    public void UpdateBoardWithGuesses(List<ProposedGuess> playerCorrectGuesses, List<ProposedGuess> opponentCorrectGuesses)
+    public void UpdateBoardWithGuesses(List<ProposedGuess> playerCorrectGuesses,
+        List<ProposedGuess> opponentCorrectGuesses)
     {
         foreach (ProposedGuess playerCorrectGuess in playerCorrectGuesses)
         {
@@ -104,13 +122,14 @@ public class SudokuBoard
     {
         if (Solution[guess.Position.x, guess.Position.y] != guess.Value)
         {
-            throw new Exception($"Only a correct guess can be written into the board BaseState, correct value is {Solution[guess.Position.x, guess.Position.y]}, guess was{guess.Value}");
+            throw new Exception(
+                $"Only a correct guess can be written into the board BaseState, correct value is {Solution[guess.Position.x, guess.Position.y]}, guess was{guess.Value}");
         }
 
         BoardState[guess.Position.x, guess.Position.y] = guess.Value;
     }
 
-    public List<int> GetCompletedColumns()
+    public List<int> GetCompletedColumns(List<Vector2Int> temporaryCorrectCells = null)
     {
         List<int> completedColumns = new List<int>();
 
@@ -120,9 +139,12 @@ public class SudokuBoard
 
             for (int y = 0; y < 9; y++)
             {
-                if (BoardState[x, y] != -1)
+                if (temporaryCorrectCells != null && temporaryCorrectCells.Contains(new Vector2Int(x, y)))
                     continue;
 
+                if (BoardState[x, y] != -1) 
+                    continue;
+                
                 columnComplete = false;
                 break;
             }
@@ -136,7 +158,7 @@ public class SudokuBoard
         return completedColumns;
     }
 
-    public List<int> GetCompletedRows()
+    public List<int> GetCompletedRows(List<Vector2Int> temporaryCorrectCells = null)
     {
         List<int> completedRows = new List<int>();
 
@@ -146,6 +168,9 @@ public class SudokuBoard
 
             for (int x = 0; x < 9; x++)
             {
+                if (temporaryCorrectCells != null && temporaryCorrectCells.Contains(new Vector2Int(x, y)))
+                    continue;
+                
                 if (BoardState[x, y] != -1)
                     continue;
 
@@ -166,7 +191,7 @@ public class SudokuBoard
     /// Get all the currently completed regions on this board.
     /// Returned regions are in pure index form where the top left region is 0 and the bottom right is 8.
     /// </summary>
-    public List<int> GetCompletedRegions()
+    public List<int> GetCompletedRegions(List<Vector2Int> temporaryCorrectCells = null)
     {
         List<int> completedRegions = new List<int>();
 
@@ -178,6 +203,9 @@ public class SudokuBoard
 
             foreach (Vector2Int cell in allRegionCells[regionIndex])
             {
+                if (temporaryCorrectCells != null && temporaryCorrectCells.Contains(cell))
+                    continue;
+                
                 if (BoardState[cell.x, cell.y] != -1)
                     continue;
 
@@ -270,5 +298,4 @@ public class SudokuBoard
 
         return cells;
     }
-
 }

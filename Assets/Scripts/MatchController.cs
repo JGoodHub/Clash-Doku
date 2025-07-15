@@ -123,8 +123,7 @@ public class MatchController : SceneSingleton<MatchController>
 
     private void HandleBotGameEndTurn()
     {
-        List<ProposedGuess> botPlacements = BotOpponentController.GetBotGuesses(RoundSeed,
-            _playerGuesses, _board, _matchConfig, _matchReport, 5);
+        List<ProposedGuess> botPlacements = BotOpponentController.Singleton.GetBotGuesses(RoundSeed, _board, _matchConfig, _matchReport, _playerGuesses);
 
         EvaluateRoundResults(_playerGuesses, botPlacements);
     }
@@ -348,25 +347,25 @@ public class MatchController : SceneSingleton<MatchController>
         out List<ProposedGuess> opponentCorrectGuesses, out List<ProposedGuess> opponentWrongGuesses)
     {
         playerCorrectGuesses = playerGuesses
-            .Where(guess => guess.Value == _board.GetSolutionForCell(guess.Position))
+            .Where(guess => guess.IsCorrect(_board))
             .OrderBy(guess => guess.Position.y)
             .ThenBy(guess => guess.Position.x)
             .ToList();
 
         playerWrongGuesses = playerGuesses
-            .Where(guess => guess.Value != _board.GetSolutionForCell(guess.Position))
+            .Where(guess => guess.IsCorrect(_board) == false)
             .OrderBy(guess => guess.Position.y)
             .ThenBy(guess => guess.Position.x)
             .ToList();
 
         opponentCorrectGuesses = opponentGuesses
-            .Where(guess => guess.Value == _board.GetSolutionForCell(guess.Position))
+            .Where(guess => guess.IsCorrect(_board))
             .OrderBy(guess => guess.Position.y)
             .ThenBy(guess => guess.Position.x)
             .ToList();
 
         opponentWrongGuesses = opponentGuesses
-            .Where(guess => guess.Value != _board.GetSolutionForCell(guess.Position))
+            .Where(guess => guess.IsCorrect(_board) == false)
             .OrderBy(guess => guess.Position.y)
             .ThenBy(guess => guess.Position.x)
             .ToList();
@@ -717,6 +716,11 @@ public class ProposedGuess
     {
         Position = position;
         Value = value;
+    }
+
+    public bool IsCorrect(SudokuBoard board)
+    {
+        return board.GetSolutionForCell(Position) == Value;
     }
 }
 
